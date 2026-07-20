@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import TwitterLogo from "./TwitterLogo";
 import { Button } from "./ui/button";
+import AuthModal from "./Authmodel";
+import TwitterLogo from "./TwitterLogo";
 
-const Landing = () => {
+export default function LandingPage() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState<"login" | "signup">("signup");
 
@@ -115,7 +116,12 @@ const Landing = () => {
           </div>
         </div>
       </div>
+
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        initialMode={authMode}
+      />
     </div>
   );
-};
-export default Landing;
+}
