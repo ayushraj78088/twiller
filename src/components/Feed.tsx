@@ -2,6 +2,7 @@ import { Tabs, TabsList, TabsTrigger } from "./ui/tabs";
 import { Card, CardContent } from "./ui/card";
 import LoadingSpinner from "./loading-spinner";
 import TweetCard from "./TweetCard";
+import TweetComposer from "./TweetComposer";
 
 interface Tweet {
   id: string;
@@ -107,6 +108,9 @@ const Feed = () => {
           </TabsList>
         </Tabs>
       </div>
+
+      <TweetComposer />
+
       <div className="divide-y divide-gray-800">
         {tweets.length === 0 ? (
           <Card className="bg-black border-none">
