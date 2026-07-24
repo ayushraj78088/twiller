@@ -15,6 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import TweetCard from "./TweetCard";
 import { Card, CardContent } from "./ui/card";
+import Editprofile from "./Editprofile";
 
 interface Tweet {
   id: string;
@@ -34,7 +35,7 @@ interface Tweet {
   retweeted?: boolean;
   image?: string;
 }
-const tweets: Tweet[] = [
+const initialTweets: Tweet[] = [
   {
     id: "1",
     author: {
@@ -103,7 +104,7 @@ export default function ProfilePage() {
 
   if (!user) return null;
 
-  const [tweets, setTweets] = useState<Tweet[]>(tweets);
+  const [tweets, setTweets] = useState<Tweet[]>(initialTweets);
   const [loading, setloading] = useState(false);
 
   const filterTweets = tweets.filter(
@@ -271,7 +272,7 @@ export default function ProfilePage() {
               </Card>
             ) : (
               filterTweets.map((tweet: any) => (
-                <TweetCard key={tweet._id} tweet={tweet} />
+                <TweetCard key={tweet.id} tweet={tweet} />
               ))
             )}
           </div>
@@ -329,6 +330,11 @@ export default function ProfilePage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <Editprofile
+        isopen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+      />
     </div>
   );
 }

@@ -122,9 +122,7 @@ const Feed = () => {
             </CardContent>
           </Card>
         ) : (
-          tweets.map((tweet: any) => (
-            <TweetCard key={tweet._id} tweet={tweet} />
-          ))
+          tweets.map((tweet) => <TweetCard key={tweet.id} tweet={tweet} />)
         )}
       </div>
     </div>

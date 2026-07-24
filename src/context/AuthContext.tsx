@@ -1,6 +1,15 @@
 "use client";
 
+import {
+  createUserWithEmailAndPassword,
+  GoogleAuthProvider,
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  signInWithPopup,
+  signOut,
+} from "firebase/auth";
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { auth } from "./firebase";
 
 interface User {
   _id: string;
@@ -29,6 +38,7 @@ interface AuthContextType {
   }) => Promise<void>;
   logout: () => void;
   isLoading: boolean;
+  googlesignin: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -49,29 +59,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Check for existing session
   useEffect(() => {
-    const saveduser = localStorage.getItem("twiller-user");
-    if (saveduser) {
-      setUser(JSON.parse(saveduser));
-    }
-    setIsLoading(false);
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser?.email) {
+        const savedUser = localStorage.getItem("twiller-user");
+
+        if (savedUser) {
+          setUser(JSON.parse(savedUser));
+        }
+      }
+
+      setIsLoading(false);
+    });
+
+    return unsubscribe;
   }, []);
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    const usercred = await signInWithEmailAndPassword(auth, email, password);
 
-    const mockUser: User = {
-      id: "1",
-      username: "johndoe",
-      displayName: "John Doe",
-      avatar:
-        "https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=400",
-      bio: "Software developer passionate about building great products",
-      joinedDate: "April 2024",
-    };
+    // const mockUser: User = {
+    //   id: "1",
+    //   username: "johndoe",
+    //   displayName: "John Doe",
+    //   avatar:
+    //     "https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=400",
+    //   bio: "Software developer passionate about building great products",
+    //   joinedDate: "April 2024",
+    // };
 
-    setUser(mockUser);
-    localStorage.setItem("twiller-user", JSON.stringify(mockUser));
+    setUser();
+    localStorage.setItem("twiller-user", JSON.stringify());
     setIsLoading(false);
   };
 
@@ -82,25 +100,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     displayName: string,
   ) => {
     setIsLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    const usercred = await createUserWithEmailAndPassword(auth, email, password)
+      .then((usercred) => {
+        const user = usercred.user;
+        console.log(user);
+      })
+      .catch((error) => {
+        console.log(error);
+      });
 
-    const mockUser: User = {
-      id: "1",
-      username: username,
-      displayName: displayName,
-      avatar:
-        "https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=400",
-      bio: "Software developer passionate about building great products",
-      joinedDate: "April 2024",
-    };
+    // const mockUser: User = {
+    //   id: "1",
+    //   username: username,
+    //   displayName: displayName,
+    //   avatar:
+    //     "https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=400",
+    //   bio: "Software developer passionate about building great products",
+    //   joinedDate: "April 2024",
+    // };
 
-    setUser(mockUser);
-    localStorage.setItem("twiller-user", JSON.stringify(mockUser));
+    setUser();
+    localStorage.setItem("twiller-user", JSON.stringify());
     setIsLoading(false);
   };
 
   const logout = async () => {
     setUser(null);
+    await signOut(auth);
     localStorage.removeItem("twitter-user");
   };
 
@@ -124,6 +150,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     setIsLoading(false);
   };
 
+  const googlesignin = async () => {
+    const googleauthprovider = new GoogleAuthProvider();
+    return signInWithPopup(auth, googleauthprovider);
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -133,6 +164,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         updateProfile,
         logout,
         isLoading,
+        googlesignin,
       }}
     >
       {children}

@@ -10,7 +10,7 @@ import Feed from "./Feed";
 export default function LandingPage() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState<"login" | "signup">("signup");
-  const { user, logout } = useAuth();
+  const { user, logout, googlesignin } = useAuth();
 
   const openAuthModal = (mode: "login" | "signup") => {
     setAuthMode(mode);
@@ -45,6 +45,7 @@ export default function LandingPage() {
             <Button
               variant="outline"
               className="w-full py-3 rounded-full border-gray-600 bg-black  text-white font-semibold text-base h-12"
+              onClick={() => googlesignin()}
             >
               <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
                 <path
@@ -70,6 +71,7 @@ export default function LandingPage() {
             <Button
               variant="outline"
               className="w-full py-3 rounded-full border-gray-600  bg-black text-white font-semibold text-base h-12"
+              onClick={() => googlesignin()}
             >
               <svg
                 className="w-5 h-5 mr-2"
