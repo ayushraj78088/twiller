@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Label } from "./ui/label";
 import { Input } from "./ui/input";
 import { Separator } from "./ui/separator";
+import { useAuth } from "@/context/AuthContext";
 import TwitterLogo from "./TwitterLogo";
 
 interface AuthModalProps {
@@ -23,8 +24,8 @@ export default function AuthModal({
   onClose,
   initialMode = "login",
 }: AuthModalProps) {
+  const { login, signup, isLoading } = useAuth();
   const [mode, setMode] = useState<"login" | "signup">(initialMode);
-  const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: "",

@@ -4,15 +4,21 @@ import { useState } from "react";
 import { Button } from "./ui/button";
 import AuthModal from "./Authmodel";
 import TwitterLogo from "./TwitterLogo";
+import { useAuth } from "@/context/AuthContext";
 
 export default function LandingPage() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState<"login" | "signup">("signup");
+  const { user, logout } = useAuth();
 
   const openAuthModal = (mode: "login" | "signup") => {
     setAuthMode(mode);
     setShowAuthModal(true);
   };
+
+  if (user) {
+    return <div>Feed page</div>;
+  }
 
   return (
     <div className="min-h-screen bg-black text-white flex">

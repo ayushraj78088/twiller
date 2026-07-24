@@ -1,13 +1,14 @@
 import Landing from "@/components/Landing";
-import { AuthProvider, useAuth } from "@/context/AuthContext";
+import Mainlayout from "@/components/layout/Mainlaout";
+import { AuthProvider } from "@/context/AuthContext";
 import Image from "next/image";
 
 export default function Home() {
-  const { user } = useAuth();
-
   return (
     <AuthProvider>
-      <Landing />
+      <Mainlayout>
+        <Landing />
+      </Mainlayout>
     </AuthProvider>
   );
 }
