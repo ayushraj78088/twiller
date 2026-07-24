@@ -5,6 +5,7 @@ import { Button } from "./ui/button";
 import AuthModal from "./Authmodel";
 import TwitterLogo from "./TwitterLogo";
 import { useAuth } from "@/context/AuthContext";
+import Feed from "./Feed";
 
 export default function LandingPage() {
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -17,7 +18,7 @@ export default function LandingPage() {
   };
 
   if (user) {
-    return <div>Feed page</div>;
+    return <Feed />;
   }
 
   return (
