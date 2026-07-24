@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import LoadingSpinner from "../loading-spinner";
 import Sidebar from "./Sidebar";
 import RightSidebar from "./Rightsidebar";
+import ProfilePage from "../ProfilePage";
 
 const Mainlayout = ({ children }: { children: React.ReactNode }) => {
   const { user, isLoading } = useAuth();
@@ -31,7 +32,7 @@ const Mainlayout = ({ children }: { children: React.ReactNode }) => {
         <Sidebar currentPage={currentPage} onNavigate={setCurrentPage} />
       </div>
       <main className="flex-1 max-w-2xl border-x border-gray-800">
-        {children}
+        {currentPage === "profile" ? <ProfilePage /> : children}
       </main>
       <div className="hidden lg:block w-80 p-4">
         <RightSidebar />
