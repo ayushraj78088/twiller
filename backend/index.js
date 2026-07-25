@@ -4,6 +4,7 @@ import mongoose from "mongoose";
 import dotenv from "dotenv";
 
 import User from "./models/user.js";
+import Tweet from "./models/tweet.js";
 
 dotenv.config();
 
