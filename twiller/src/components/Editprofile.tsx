@@ -8,6 +8,7 @@ import { Label } from "./ui/label";
 import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
 import LoadingSpinner from "./loading-spinner";
+import axios from "axios";
 
 const Editprofile = ({ isopen, onclose }: any) => {
   const { user, updateProfile } = useAuth();
