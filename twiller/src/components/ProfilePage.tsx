@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ArrowLeft,
   Calendar,
@@ -16,6 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import TweetCard from "./TweetCard";
 import { Card, CardContent } from "./ui/card";
 import Editprofile from "./Editprofile";
+import axiosInstance from "@/lib/axiosInstance";
 
 interface Tweet {
   id: string;
@@ -35,7 +36,7 @@ interface Tweet {
   retweeted?: boolean;
   image?: string;
 }
-const initialTweets: Tweet[] = [
+const tweets: Tweet[] = [
   {
     id: "1",
     author: {
@@ -96,19 +97,31 @@ const initialTweets: Tweet[] = [
       "https://images.pexels.com/photos/196645/pexels-photo-196645.jpeg?auto=compress&cs=tinysrgb&w=800",
   },
 ];
-
 export default function ProfilePage() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("posts");
   const [showEditModal, setShowEditModal] = useState(false);
 
   if (!user) return null;
-
-  const [tweets, setTweets] = useState<Tweet[]>(initialTweets);
+  const [tweets, setTweets] = useState<any>([]);
   const [loading, setloading] = useState(false);
-
-  const filterTweets = tweets.filter(
-    (tweet: Tweet) => tweet.author.id === user._id,
+  const fetchTweets = async () => {
+    try {
+      setloading(true);
+      const res = await axiosInstance.get("/post");
+      setTweets(res.data);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setloading(false);
+    }
+  };
+  useEffect(() => {
+    fetchTweets();
+  }, []);
+  // Filter tweets by current user
+  const userTweets = tweets.filter(
+    (tweet: any) => tweet.author._id === user._id,
   );
 
   return (
@@ -125,7 +138,7 @@ export default function ProfilePage() {
           </Button>
           <div>
             <h1 className="text-xl font-bold text-white">{user.displayName}</h1>
-            <p className="text-sm text-gray-400">{filterTweets.length} posts</p>
+            <p className="text-sm text-gray-400">{userTweets.length} posts</p>
           </div>
         </div>
       </div>
@@ -258,8 +271,6 @@ export default function ProfilePage() {
         <TabsContent value="posts" className="mt-0">
           <div className="divide-y divide-gray-800">
             {loading ? (
-              <p>Loading...</p>
-            ) : filterTweets.length === 0 ? (
               <Card className="bg-black border-none">
                 <CardContent className="py-12 text-center">
                   <div className="text-gray-400">
@@ -271,8 +282,8 @@ export default function ProfilePage() {
                 </CardContent>
               </Card>
             ) : (
-              filterTweets.map((tweet: any) => (
-                <TweetCard key={tweet.id} tweet={tweet} />
+              userTweets.map((tweet: any) => (
+                <TweetCard key={tweet._id} tweet={tweet} />
               ))
             )}
           </div>
@@ -330,10 +341,9 @@ export default function ProfilePage() {
           </Card>
         </TabsContent>
       </Tabs>
-
       <Editprofile
         isopen={showEditModal}
-        onClose={() => setShowEditModal(false)}
+        onclose={() => setShowEditModal(false)}
       />
     </div>
   );

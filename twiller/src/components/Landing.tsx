@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { Button } from "./ui/button";
 import AuthModal from "./Authmodel";
-import TwitterLogo from "./TwitterLogo";
 import { useAuth } from "@/context/AuthContext";
 import Feed from "./Feed";
+import TwitterLogo from "./TwitterLogo";
 
 export default function LandingPage() {
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -16,11 +16,9 @@ export default function LandingPage() {
     setAuthMode(mode);
     setShowAuthModal(true);
   };
-
   if (user) {
     return <Feed />;
   }
-
   return (
     <div className="min-h-screen bg-black text-white flex">
       {/* Left side - Logo */}

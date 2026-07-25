@@ -20,9 +20,7 @@ const Editprofile = ({ isopen, onclose }: any) => {
     avatar: user?.avatar || "",
   });
   const [error, setError] = useState<any>({});
-
   if (!isopen || !user) return null;
-
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
@@ -70,8 +68,27 @@ const Editprofile = ({ isopen, onclose }: any) => {
     }
   };
 
-  const handlePhotoUpload = async () => {};
-
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    setIsLoading(true);
+    const image = e.target.files[0];
+    const formdataimg = new FormData();
+    formdataimg.set("image", image);
+    try {
+      const res = await axios.post(
+        "https://api.imgbb.com/1/upload?key=c008f41020bc12d2886285c71da7c1f8",
+        formdataimg,
+      );
+      const url = res.data.data.display_url;
+      if (url) {
+        setFormdata((prev) => ({ ...prev, avatar: url }));
+      }
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
       <Card className="w-full max-w-2xl bg-black border-gray-800 text-white max-h-[90vh] overflow-y-auto">
