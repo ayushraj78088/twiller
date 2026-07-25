@@ -1,8 +1,10 @@
+import { useEffect, useState } from "react";
 import { Tabs, TabsList, TabsTrigger } from "./ui/tabs";
 import { Card, CardContent } from "./ui/card";
 import LoadingSpinner from "./loading-spinner";
 import TweetCard from "./TweetCard";
 import TweetComposer from "./TweetComposer";
+import axiosInstance from "@/lib/axiosInstance";
 
 interface Tweet {
   id: string;
@@ -84,6 +86,28 @@ const tweets: Tweet[] = [
   },
 ];
 const Feed = () => {
+  const [tweets, setTweets] = useState<any>([]);
+  const [loading, setloading] = useState(false);
+  const fetchTweets = async () => {
+    try {
+      setloading(true);
+      const res = await axiosInstance.get("/post");
+      setTweets(res.data);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setloading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchTweets();
+  }, []);
+
+  const handlenewtweet = (newtweet: any) => {
+    setTweets((prev: any) => [newtweet, ...prev]);
+  };
+
   return (
     <div className="min-h-screen">
       <div className="sticky top-0 bg-black/90 backdrop-blur-md border-b border-gray-800 z-10">
@@ -108,11 +132,9 @@ const Feed = () => {
           </TabsList>
         </Tabs>
       </div>
-
-      <TweetComposer />
-
+      <TweetComposer onTweetPosted={handlenewtweet} />
       <div className="divide-y divide-gray-800">
-        {tweets.length === 0 ? (
+        {loading ? (
           <Card className="bg-black border-none">
             <CardContent className="py-12 text-center">
               <div className="text-gray-400 mb-4">
@@ -122,7 +144,9 @@ const Feed = () => {
             </CardContent>
           </Card>
         ) : (
-          tweets.map((tweet) => <TweetCard key={tweet.id} tweet={tweet} />)
+          tweets.map((tweet: any) => (
+            <TweetCard key={tweet._id} tweet={tweet} />
+          ))
         )}
       </div>
     </div>

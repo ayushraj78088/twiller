@@ -6,6 +6,8 @@ import { Textarea } from "./ui/textarea";
 import { Button } from "./ui/button";
 import { Image, Smile, Calendar, MapPin, BarChart3, Globe } from "lucide-react";
 import { Separator } from "./ui/separator";
+import axios from "axios";
+import axiosInstance from "@/lib/axiosInstance";
 
 const TweetComposer = ({ onTweetPosted }: any) => {
   const { user } = useAuth();
@@ -17,13 +19,51 @@ const TweetComposer = ({ onTweetPosted }: any) => {
   const handleSubmit = async (e: any) => {
     e.preventDefault();
     if (!user || !content.trim()) return;
+    try {
+      const tweetdata = {
+        author: user?._id,
+        content,
+        image: imageurl,
+      };
+      const res = await axiosInstance.post("/post", tweetdata);
+      onTweetPosted(res.data);
+      setContent("");
+      setimageurl("");
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const characterCount = content.length;
   const isOverLimit = characterCount > maxLength;
   const isNearLimit = characterCount > maxLength * 0.8;
+
   if (!user) return null;
 
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    setIsLoading(true);
+    const image = e.target.files[0];
+    const formdataimg = new FormData();
+    formdataimg.set("image", image);
+    try {
+      const res = await axios.post(
+        "https://api.imgbb.com/1/upload?key=97f3fb960c3520d6a88d7e29679cf96f",
+        formdataimg,
+      );
+      const url = res.data.data.display_url;
+      if (url) {
+        setimageurl(url);
+      }
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
   return (
     <Card className="bg-black border-gray-800 border-x-0 border-t-0 rounded-none">
       <CardContent className="p-4">
@@ -54,6 +94,7 @@ const TweetComposer = ({ onTweetPosted }: any) => {
                       accept="image/*"
                       id="tweetImage"
                       className="hidden"
+                      onChange={handlePhotoUpload}
                       disabled={isLoading}
                     />
                   </label>

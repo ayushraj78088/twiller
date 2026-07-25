@@ -1,5 +1,6 @@
 "use client";
 
+import React, { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
 import { Card, CardContent } from "./ui/card";
@@ -10,11 +11,33 @@ import {
   Share,
   MoreHorizontal,
 } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import axiosInstance from "@/lib/axiosInstance";
 
 export default function TweetCard({ tweet }: any) {
-  const likeTweet = async (tweetId: string) => {};
-  const retweetTweet = async (tweetId: string) => {};
+  const { user } = useAuth();
+  const [tweetstate, settweetstate] = useState(tweet);
+  const likeTweet = async (tweetId: string) => {
+    try {
+      const res = await axiosInstance.post(`/like/${tweetId}`, {
+        userId: user?._id,
+      });
+      settweetstate(res.data);
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
+  const retweetTweet = async (tweetId: string) => {
+    try {
+      const res = await axiosInstance.post(`/retweet/${tweetId}`, {
+        userId: user?._id,
+      });
+      settweetstate(res.data);
+    } catch (error) {
+      console.log(error);
+    }
+  };
   const formatNumber = (num: number) => {
     if (num >= 1000000) {
       return (num / 1000000).toFixed(1) + "M";
@@ -24,25 +47,26 @@ export default function TweetCard({ tweet }: any) {
     }
     return num.toString();
   };
-
+  const isLiked = tweetstate.likedBy?.includes(user?._id);
+  const isRetweet = tweetstate.retweetedBy?.includes(user?._id);
   return (
     <Card className="bg-black border-gray-800 border-x-0 border-t-0 rounded-none hover:bg-gray-950/50 transition-colors cursor-pointer">
       <CardContent className="p-4">
         <div className="flex space-x-3">
           <Avatar className="h-12 w-12">
             <AvatarImage
-              src={tweet.author.avatar}
-              alt={tweet.author.displayName}
+              src={tweetstate.author.avatar}
+              alt={tweetstate.author.displayName}
             />
-            <AvatarFallback>{tweet.author.displayName}</AvatarFallback>
+            <AvatarFallback>{tweetstate.author.displayName}</AvatarFallback>
           </Avatar>
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center space-x-2 mb-2">
               <span className="font-bold text-white">
-                {tweet.author.displayName}
+                {tweetstate.author.displayName}
               </span>
-              {tweet.author.verified && (
+              {tweetstate.author.verified && (
                 <div className="bg-blue-500 rounded-full p-0.5">
                   <svg
                     className="h-4 w-4 text-white fill-current"
@@ -52,11 +76,13 @@ export default function TweetCard({ tweet }: any) {
                   </svg>
                 </div>
               )}
-              <span className="text-gray-500">@{tweet.author.username}</span>
+              <span className="text-gray-500">
+                @{tweetstate.author.username}
+              </span>
               <span className="text-gray-500">·</span>
               <span className="text-gray-500">
-                {tweet.timestamp &&
-                  new Date(tweet.timestamp).toLocaleDateString("en-us", {
+                {tweetstate.timestamp &&
+                  new Date(tweetstate.timestamp).toLocaleDateString("en-us", {
                     month: "long",
                     year: "numeric",
                   })}
@@ -73,13 +99,13 @@ export default function TweetCard({ tweet }: any) {
             </div>
 
             <div className="text-white mb-3 leading-relaxed">
-              {tweet.content}
+              {tweetstate.content}
             </div>
 
-            {tweet.image && (
+            {tweetstate.image && (
               <div className="mb-3 rounded-2xl overflow-hidden">
                 <img
-                  src={tweet.image}
+                  src={tweetstate.image}
                   alt="Tweet image"
                   className="w-full h-auto max-h-96 object-cover"
                 />
@@ -93,17 +119,22 @@ export default function TweetCard({ tweet }: any) {
                 className="flex items-center space-x-2 p-2 rounded-full hover:bg-blue-900/20 text-gray-500 hover:text-blue-400 group"
               >
                 <MessageCircle className="h-5 w-5 group-hover:text-blue-400" />
-                <span className="text-sm">{formatNumber(tweet.comments)}</span>
+                <span className="text-sm">
+                  {formatNumber(tweetstate.comments)}
+                </span>
               </Button>
 
               <Button
                 variant="ghost"
                 size="sm"
-                className={`flex items-center space-x-2 p-2 rounded-full hover:bg-green-900/20 group
+                className={`flex items-center space-x-2 p-2 rounded-full hover:bg-green-900/20 group ${
+                  isRetweet
+                    ? "text-green-400"
+                    : "text-gray-500 hover:text-green-400"
                 }`}
                 onClick={(e) => {
                   e.stopPropagation();
-                  retweetTweet(tweet._id);
+                  retweetTweet(tweetstate._id);
                 }}
               >
                 <Repeat2
@@ -113,27 +144,32 @@ export default function TweetCard({ tweet }: any) {
                       : "group-hover:text-green-400"
                   }`}
                 />
-                <span className="text-sm">{formatNumber(tweet.retweets)}</span>
+                <span className="text-sm">
+                  {formatNumber(tweetstate.retweets)}
+                </span>
               </Button>
 
               <Button
                 variant="ghost"
                 size="sm"
-                className={`flex items-center space-x-2 p-2 rounded-full hover:bg-red-900/20 group
+                className={`flex items-center space-x-2 p-2 rounded-full hover:bg-red-900/20 group ${
+                  isLiked ? "text-red-500" : "text-gray-500 hover:text-red-400"
                 }`}
                 onClick={(e) => {
                   e.stopPropagation();
-                  likeTweet(tweet._id);
+                  likeTweet(tweetstate._id);
                 }}
               >
                 <Heart
                   className={`h-5 w-5 ${
-                    tweet.liked
+                    tweetstate.liked
                       ? "text-red-500 fill-current"
                       : "group-hover:text-red-400"
                   }`}
                 />
-                <span className="text-sm">{formatNumber(tweet.likes)}</span>
+                <span className="text-sm">
+                  {formatNumber(tweetstate.likes)}
+                </span>
               </Button>
 
               <Button
