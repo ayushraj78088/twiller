@@ -77,7 +77,7 @@ const Editprofile = ({ isopen, onclose }: any) => {
     formdataimg.set("image", image);
     try {
       const res = await axios.post(
-        "https://api.imgbb.com/1/upload?key=c008f41020bc12d2886285c71da7c1f8",
+        `https://api.imgbb.com/1/upload?key=${process.env.IMGBB_API_KEY}`,
         formdataimg,
       );
       const url = res.data.data.display_url;
