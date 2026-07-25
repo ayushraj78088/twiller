@@ -11,6 +11,7 @@ import {
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { auth } from "./firebase";
 import axiosInstance from "../lib/axiosInstance";
+import axios from "axios";
 
 interface User {
   _id: string;
