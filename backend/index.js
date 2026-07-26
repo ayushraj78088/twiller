@@ -8,28 +8,41 @@ import Tweet from "./models/tweet.js";
 
 dotenv.config();
 
+import http from "http";
+import { Server } from "socket.io";
+
 const app = express();
 
-app.use(cors());
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL,
+    credentials: true,
+  }),
+);
+
 app.use(express.json());
 
-app.get("/", (req, res) => {
-  res.send("Twiller backend is running successfully");
+const server = http.createServer(app);
+
+const io = new Server(server, {
+  cors: {
+    origin: process.env.FRONTEND_URL,
+    methods: ["GET", "POST", "PATCH"],
+    credentials: true,
+  },
 });
 
-const port = process.env.PORT || 5000;
-const url = process.env.MONGODB_URL;
-
 mongoose
-  .connect(url)
+  .connect(process.env.MONGODB_URL)
   .then(() => {
     console.log("✅ Connected to MongoDB");
-    app.listen(port, () => {
-      console.log(`🚀 Server running on port ${port}`);
+
+    server.listen(process.env.PORT || 5000, () => {
+      console.log(`🚀 Server running on ${process.env.PORT || 5000}`);
     });
   })
   .catch((err) => {
-    console.error("❌ MongoDB connection error:", err.message);
+    console.log(err);
   });
 
 //Register
@@ -82,8 +95,14 @@ app.patch("/userupdate/:email", async (req, res) => {
 app.post("/post", async (req, res) => {
   try {
     const tweet = new Tweet(req.body);
+
     await tweet.save();
-    return res.status(201).send(tweet);
+
+    const populatedTweet = await Tweet.findById(tweet._id).populate("author");
+
+    io.emit("newTweet", populatedTweet);
+
+    return res.status(201).send(populatedTweet);
   } catch (error) {
     return res.status(400).send({ error: error.message });
   }

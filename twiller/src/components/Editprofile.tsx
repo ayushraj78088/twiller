@@ -13,15 +13,20 @@ import axios from "axios";
 const Editprofile = ({ isopen, onclose }: any) => {
   const { user, updateProfile } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+
   const [formData, setFormdata] = useState({
     displayName: user?.displayName || "",
     bio: user?.bio || "",
-    location: "Earth",
-    website: "example.com",
+    location: user?.location || "",
+    website: user?.website || "",
     avatar: user?.avatar || "",
+    notificationsEnabled: user?.notificationsEnabled ?? true,
   });
+
   const [error, setError] = useState<any>({});
+
   if (!isopen || !user) return null;
+
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
@@ -67,6 +72,27 @@ const Editprofile = ({ isopen, onclose }: any) => {
     if (error[field]) {
       setError((prev: any) => ({ ...prev, [field]: "" }));
     }
+  };
+
+  const handleNotificationToggle = async (enabled: boolean) => {
+    if (enabled) {
+      if (!("Notification" in window)) {
+        alert("This browser doesn't support notifications.");
+        return;
+      }
+
+      const permission = await Notification.requestPermission();
+
+      if (permission !== "granted") {
+        alert("Please allow notifications.");
+        return;
+      }
+    }
+
+    setFormdata((prev) => ({
+      ...prev,
+      notificationsEnabled: enabled,
+    }));
   };
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -286,6 +312,43 @@ const Editprofile = ({ isopen, onclose }: any) => {
                   <p className="text-gray-400 ml-auto">
                     {formData.website.length}/100
                   </p>
+                </div>
+              </div>
+
+              {/* Notifications */}
+
+              <div className="space-y-3 border border-gray-700 rounded-xl p-4">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h3 className="text-white font-semibold">
+                      Browser Notifications
+                    </h3>
+
+                    <p className="text-gray-400 text-sm">
+                      Receive notifications for tweets containing
+                      <span className="text-white"> cricket </span>
+                      or
+                      <span className="text-white"> science</span>.
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleNotificationToggle(!formData.notificationsEnabled)
+                    }
+                    className={`w-14 h-7 rounded-full transition relative ${
+                      formData.notificationsEnabled
+                        ? "bg-blue-500"
+                        : "bg-gray-600"
+                    }`}
+                  >
+                    <span
+                      className={`absolute top-1 w-5 h-5 rounded-full bg-white transition ${
+                        formData.notificationsEnabled ? "left-8" : "left-1"
+                      }`}
+                    />
+                  </button>
                 </div>
               </div>
             </div>

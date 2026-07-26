@@ -1,5 +1,5 @@
 import { useAuth } from "@/context/AuthContext";
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { Card, CardContent } from "./ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Textarea } from "./ui/textarea";
@@ -11,6 +11,7 @@ import axiosInstance from "@/lib/axiosInstance";
 
 const TweetComposer = ({ onTweetPosted }: any) => {
   const { user } = useAuth();
+  const socketRef = useRef<any>(null);
   const [content, setContent] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [imageurl, setimageurl] = useState("");

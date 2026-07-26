@@ -1,13 +1,17 @@
-import { useEffect, useState } from "react";
+"use client";
+
+import { useEffect, useState, useRef } from "react";
 import { Tabs, TabsList, TabsTrigger } from "./ui/tabs";
 import { Card, CardContent } from "./ui/card";
 import LoadingSpinner from "./loading-spinner";
 import TweetCard from "./TweetCard";
 import TweetComposer from "./TweetComposer";
 import axiosInstance from "@/lib/axiosInstance";
+import { useAuth } from "@/context/AuthContext";
+import { io, Socket } from "socket.io-client";
 
 interface Tweet {
-  id: string;
+  _id: string;
   author: {
     id: string;
     username: string;
@@ -24,6 +28,7 @@ interface Tweet {
   retweeted?: boolean;
   image?: string;
 }
+
 const tweets: Tweet[] = [
   {
     id: "1",
@@ -85,28 +90,107 @@ const tweets: Tweet[] = [
       "https://images.pexels.com/photos/196645/pexels-photo-196645.jpeg?auto=compress&cs=tinysrgb&w=800",
   },
 ];
+
 const Feed = () => {
+  const { user } = useAuth();
+
+  const socketRef = useRef<Socket | null>(null);
+
   const [tweets, setTweets] = useState<any>([]);
-  const [loading, setloading] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const notifiedTweets = useRef(new Set<string>());
+  const userRef = useRef(user);
+
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
+
   const fetchTweets = async () => {
     try {
-      setloading(true);
+      setLoading(true);
+
       const res = await axiosInstance.get("/post");
+
       setTweets(res.data);
+      showNotifications(res.data);
     } catch (error) {
       console.error(error);
     } finally {
-      setloading(false);
+      setLoading(false);
     }
   };
 
+  const KEYWORDS = ["cricket", "science"];
+
+  const showNotifications = (tweetsData: Tweet[]) => {
+    if (!userRef.current?.notificationsEnabled) return;
+
+    if (!("Notification" in window)) return;
+
+    if (Notification.permission !== "granted") return;
+
+    tweetsData.forEach((tweet) => {
+      if (notifiedTweets.current.has(tweet._id)) return;
+
+      const text = tweet.content?.toLowerCase() || "";
+
+      const matched = KEYWORDS.some((keyword) => text.includes(keyword));
+
+      if (!matched) return;
+
+      notifiedTweets.current.add(tweet._id);
+
+      const notification = new Notification(
+        `${tweet.author.displayName} posted`,
+        {
+          body: tweet.content,
+          icon: tweet.author?.avatar,
+        },
+      );
+
+      notification.onclick = () => {
+        window.focus();
+        notification.close();
+      };
+
+      setTimeout(() => notification.close(), 5000);
+    });
+  };
+
+  useEffect(() => {
+    if (!user?.notificationsEnabled) return;
+
+    if (!("Notification" in window)) return;
+
+    if (Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+  }, [user]);
+
   useEffect(() => {
     fetchTweets();
-  }, []);
+  }, [user]);
 
-  const handlenewtweet = (newtweet: any) => {
-    setTweets((prev: any) => [newtweet, ...prev]);
-  };
+  useEffect(() => {
+    socketRef.current = io(process.env.BACKEND_URL!);
+
+    socketRef.current.on("newTweet", (tweet: Tweet) => {
+      setTweets((prev) => {
+        if (prev.some((t) => t._id === tweet._id)) {
+          return prev;
+        }
+
+        return [tweet, ...prev];
+      });
+
+      showNotifications([tweet]);
+    });
+
+    return () => {
+      socketRef.current?.disconnect();
+    };
+  }, []);
 
   return (
     <div className="min-h-screen">
@@ -132,7 +216,7 @@ const Feed = () => {
           </TabsList>
         </Tabs>
       </div>
-      <TweetComposer onTweetPosted={handlenewtweet} />
+      <TweetComposer onTweetPosted={() => {}} />
       <div className="divide-y divide-gray-800">
         {loading ? (
           <Card className="bg-black border-none">
