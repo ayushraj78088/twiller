@@ -36,6 +36,7 @@ interface Tweet {
   retweeted?: boolean;
   image?: string;
 }
+
 const tweets: Tweet[] = [
   {
     id: "1",

@@ -34,7 +34,7 @@ const Feed = () => {
 
   const socketRef = useRef<Socket | null>(null);
 
-  const [tweets, setTweets] = useState<any>([]);
+  const [tweets, setTweets] = useState<Tweet[]>([]);
   const [loading, setLoading] = useState(false);
 
   const notifiedTweets = useRef(new Set<string>());
@@ -114,8 +114,8 @@ const Feed = () => {
     socketRef.current = io(process.env.BACKEND_URL!);
 
     socketRef.current.on("newTweet", (tweet: Tweet) => {
-      setTweets((prev) => {
-        if (prev.some((t) => t._id === tweet._id)) {
+      setTweets((prev: Tweet[]) => {
+        if (prev.some((t: Tweet) => t._id === tweet._id)) {
           return prev;
         }
 
@@ -166,7 +166,7 @@ const Feed = () => {
             </CardContent>
           </Card>
         ) : (
-          tweets.map((tweet: any) => (
+          tweets.map((tweet: Tweet) => (
             <TweetCard key={tweet._id} tweet={tweet} />
           ))
         )}
