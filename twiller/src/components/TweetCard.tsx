@@ -10,6 +10,7 @@ import {
   Repeat2,
   Share,
   MoreHorizontal,
+  Volume2,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import axiosInstance from "@/lib/axiosInstance";
@@ -45,7 +46,7 @@ export default function TweetCard({ tweet }: any) {
     if (num >= 1000) {
       return (num / 1000).toFixed(1) + "K";
     }
-    return num.toString();
+    return num ? num.toString() : "0";
   };
   const isLiked = tweetstate.likedBy?.includes(user?._id);
   const isRetweet = tweetstate.retweetedBy?.includes(user?._id);
@@ -55,18 +56,20 @@ export default function TweetCard({ tweet }: any) {
         <div className="flex space-x-3">
           <Avatar className="h-12 w-12">
             <AvatarImage
-              src={tweetstate.author.avatar}
-              alt={tweetstate.author.displayName}
+              src={tweetstate.author?.avatar}
+              alt={tweetstate.author?.displayName || "User"}
             />
-            <AvatarFallback>{tweetstate.author.displayName}</AvatarFallback>
+            <AvatarFallback>
+              {tweetstate.author?.displayName?.[0] || tweetstate.author?.username?.[0] || "U"}
+            </AvatarFallback>
           </Avatar>
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center space-x-2 mb-2">
               <span className="font-bold text-white">
-                {tweetstate.author.displayName}
+                {tweetstate.author?.displayName || "User"}
               </span>
-              {tweetstate.author.verified && (
+              {tweetstate.author?.verified && (
                 <div className="bg-blue-500 rounded-full p-0.5">
                   <svg
                     className="h-4 w-4 text-white fill-current"
@@ -77,7 +80,7 @@ export default function TweetCard({ tweet }: any) {
                 </div>
               )}
               <span className="text-gray-500">
-                @{tweetstate.author.username}
+                @{tweetstate.author?.username || "user"}
               </span>
               <span className="text-gray-500">·</span>
               <span className="text-gray-500">
@@ -101,6 +104,20 @@ export default function TweetCard({ tweet }: any) {
             <div className="text-white mb-3 leading-relaxed">
               {tweetstate.content}
             </div>
+
+            {tweetstate.audio && (
+              <div className="mb-3 bg-gradient-to-r from-blue-950/40 via-purple-950/30 to-gray-900 border border-blue-900/40 p-3 rounded-2xl">
+                <div className="flex items-center space-x-2 text-xs font-semibold text-blue-400 mb-2">
+                  <Volume2 className="h-4 w-4" />
+                  <span>Voice Tweet</span>
+                </div>
+                <audio
+                  controls
+                  src={tweetstate.audio}
+                  className="w-full h-10 rounded-lg focus:outline-none"
+                />
+              </div>
+            )}
 
             {tweetstate.image && (
               <div className="mb-3 rounded-2xl overflow-hidden">
