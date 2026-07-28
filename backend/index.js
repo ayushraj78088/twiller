@@ -10,8 +10,18 @@ import { fileURLToPath } from "url";
 import User from "./models/user.js";
 import Tweet from "./models/tweet.js";
 import Otp from "./models/otp.js";
+import PasswordReset from "./models/passwordReset.js";
 import { isWithinISTAudioWindow, validateAudioFile } from "./utils/audioUtils.js";
 import { sendOtpEmail } from "./services/emailService.js";
+
+import { initializeApp as initFirebaseAdmin, getApps } from "firebase-admin/app";
+import { getAuth as getFirebaseAdminAuth } from "firebase-admin/auth";
+
+if (!getApps().length) {
+  initFirebaseAdmin({
+    projectId: process.env.FIREBASE_PROJECT_ID || "twiller-4fa04",
+  });
+}
 
 dotenv.config();
 
@@ -183,6 +193,165 @@ app.post("/verify-otp", async (req, res) => {
     await Otp.deleteOne({ _id: record._id });
 
     return res.status(200).send({ success: true, message: "OTP verified successfully." });
+  } catch (error) {
+    return res.status(500).send({ error: error.message });
+  }
+});
+
+// Password Reset Routes
+
+// 1. Request Password Reset (Once per day limit guard)
+app.post("/request-password-reset", async (req, res) => {
+  try {
+    const { identifier } = req.body;
+    if (!identifier || !identifier.trim()) {
+      return res.status(400).send({ error: "Please enter your registered Email or Phone number." });
+    }
+
+    const cleanId = identifier.trim().toLowerCase();
+
+    // Find registered user by Email or Phone number
+    const user = await User.findOne({
+      $or: [
+        { email: cleanId },
+        { phone: identifier.trim() },
+        { username: cleanId },
+      ],
+    });
+
+    if (!user) {
+      return res.status(404).send({
+        error: "No registered account found with that Email or Phone number.",
+      });
+    }
+
+    // Check once-per-day limit restriction
+    const now = new Date();
+    if (user.lastPasswordResetDate) {
+      const lastReset = new Date(user.lastPasswordResetDate);
+
+      const isSameDay =
+        lastReset.getUTCFullYear() === now.getUTCFullYear() &&
+        lastReset.getUTCMonth() === now.getUTCMonth() &&
+        lastReset.getUTCDate() === now.getUTCDate();
+
+      const timeDiff = now.getTime() - lastReset.getTime();
+      const isWithin24Hours = timeDiff < 24 * 60 * 60 * 1000;
+
+      if (isSameDay || isWithin24Hours) {
+        return res.status(429).send({
+          error: "You can use this option only one time per day.",
+        });
+      }
+    }
+
+    // Record request timestamp for daily guard
+    user.lastPasswordResetDate = now;
+    await user.save();
+
+    // Generate 6-digit verification code
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+    await PasswordReset.deleteMany({ identifier: user.email });
+
+    const newReset = new PasswordReset({
+      identifier: user.email,
+      otp: otpCode,
+    });
+    await newReset.save();
+
+    const emailResult = await sendOtpEmail(user.email, otpCode, {
+      subject: "Your Twiller Password Reset Verification Code",
+      title: "Twiller Password Reset Verification",
+      description: "Use the following 6-digit verification code to reset your account password:",
+    });
+
+    return res.status(200).send({
+      message: `Password reset verification code sent to ${user.email}`,
+      email: user.email,
+      previewUrl: emailResult?.previewUrl || null,
+    });
+  } catch (error) {
+    return res.status(500).send({ error: error.message });
+  }
+});
+
+// Login Check endpoint
+app.post("/login-check", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).send({ error: "Email and password are required." });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+    const user = await User.findOne({
+      $or: [{ email: cleanEmail }, { username: cleanEmail }],
+    });
+
+    if (!user) {
+      return res.status(404).send({ error: "Invalid credentials" });
+    }
+
+    // Verify password match strictly
+    if (!user.password || user.password !== password.trim()) {
+      return res.status(400).send({ error: "Invalid credentials" });
+    }
+
+    return res.status(200).send(user);
+  } catch (error) {
+    return res.status(400).send({ error: error.message });
+  }
+});
+
+// 2. Verify Password Reset OTP and Complete Reset
+app.post("/verify-password-reset", async (req, res) => {
+  try {
+    const { identifier, otp, newPassword } = req.body;
+    if (!identifier || !otp || !newPassword) {
+      return res.status(400).send({ error: "Identifier, OTP code, and new password are required." });
+    }
+
+    const record = await PasswordReset.findOne({
+      identifier: identifier.trim().toLowerCase(),
+      otp: otp.trim(),
+    });
+
+    if (!record) {
+      return res.status(400).send({ error: "Invalid or expired password reset verification code." });
+    }
+
+    // Update password in MongoDB User model
+    const user = await User.findOne({
+      $or: [
+        { email: record.identifier.toLowerCase() },
+        { phone: record.identifier },
+      ],
+    });
+
+    if (user) {
+      user.password = newPassword.trim();
+      await user.save();
+    }
+
+    // Also attempt updating password in Firebase Authentication
+    try {
+      const adminAuth = getFirebaseAdminAuth();
+      const fbUser = await adminAuth.getUserByEmail(record.identifier);
+      await adminAuth.updateUser(fbUser.uid, { password: newPassword.trim() });
+      console.log(`✅ Password successfully updated in Firebase Auth for ${record.identifier}`);
+    } catch (fbErr) {
+      console.warn("⚠️ Firebase Auth password update note:", fbErr.message);
+    }
+
+    // Reset code verified, remove record
+    await PasswordReset.deleteOne({ _id: record._id });
+
+    return res.status(200).send({
+      success: true,
+      message: "Password reset successfully! You can now log in with your new password.",
+      user: user || null,
+    });
   } catch (error) {
     return res.status(500).send({ error: error.message });
   }

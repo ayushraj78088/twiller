@@ -28,7 +28,7 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
 
   signup: (
     email: string,
@@ -49,6 +49,7 @@ interface AuthContextType {
   logout: () => void;
   isLoading: boolean;
   googlesignin: () => void;
+  setSessionUser: (userData: User) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -84,34 +85,70 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           console.log("Failed to fetch user:", err);
         }
       } else {
-        setUser(null);
-        localStorage.removeItem("twitter-user");
+        const storedUser = localStorage.getItem("twitter-user");
+        if (storedUser) {
+          try {
+            setUser(JSON.parse(storedUser));
+          } catch (e) {
+            setUser(null);
+            localStorage.removeItem("twitter-user");
+          }
+        } else {
+          setUser(null);
+        }
       }
       setIsLoading(false);
     });
     return () => unsubcribe();
   }, []);
 
-  const login = async (email: string, password: string) => {
-    setIsLoading(true);
-
+  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      const usercred = await signInWithEmailAndPassword(auth, email, password);
-
-      const firebaseuser = usercred.user;
-
-      const res = await axiosInstance.get("/loggedinuser", {
-        params: {
-          email: firebaseuser.email,
-        },
-      });
-
-      if (res.data) {
-        setUser(res.data);
-        localStorage.setItem("twitter-user", JSON.stringify(res.data));
+      // 1. Try Firebase Auth signin
+      let firebaseUser = null;
+      try {
+        const usercred = await signInWithEmailAndPassword(auth, email, password);
+        firebaseUser = usercred.user;
+      } catch (fbErr: any) {
+        console.warn("Firebase Auth signin note:", fbErr.message);
       }
-    } finally {
-      setIsLoading(false);
+
+      // 2. Query backend login-check endpoint
+      let backendUser = null;
+      let backendError = null;
+      try {
+        const res = await axiosInstance.post("/login-check", { email, password });
+        backendUser = res.data;
+      } catch (apiErr: any) {
+        backendError = apiErr.response?.data?.error || "Invalid credentials";
+      }
+
+      if (backendUser) {
+        setUser(backendUser);
+        localStorage.setItem("twitter-user", JSON.stringify(backendUser));
+        return { success: true };
+      }
+
+      if (firebaseUser?.email) {
+        const resFb = await axiosInstance.get("/loggedinuser", {
+          params: { email: firebaseUser.email },
+        });
+        if (resFb.data) {
+          setUser(resFb.data);
+          localStorage.setItem("twitter-user", JSON.stringify(resFb.data));
+          return { success: true };
+        }
+      }
+
+      return {
+        success: false,
+        error: backendError || "Invalid credentials. Please check your email and password.",
+      };
+    } catch (err: any) {
+      return {
+        success: false,
+        error: err.response?.data?.error || err.message || "Invalid credentials",
+      };
     }
   };
 
@@ -121,34 +158,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     username: string,
     displayName: string,
   ) => {
-    setIsLoading(true);
+    const usercred = await createUserWithEmailAndPassword(
+      auth,
+      email,
+      password,
+    );
 
-    try {
-      const usercred = await createUserWithEmailAndPassword(
-        auth,
-        email,
-        password,
-      );
+    const user = usercred.user;
 
-      const user = usercred.user;
+    const newuser = {
+      username,
+      displayName,
+      avatar:
+        user.photoURL ||
+        "https://images.pexels.com/photos/1139743/pexels-photo-1139743.jpeg?auto=compress&cs=tinysrgb&w=400",
+      email: user.email,
+    };
 
-      const newuser = {
-        username,
-        displayName,
-        avatar:
-          user.photoURL ||
-          "https://images.pexels.com/photos/1139743/pexels-photo-1139743.jpeg?auto=compress&cs=tinysrgb&w=400",
-        email: user.email,
-      };
+    const res = await axiosInstance.post("/register", newuser);
 
-      const res = await axiosInstance.post("/register", newuser);
-
-      if (res.data) {
-        setUser(res.data);
-        localStorage.setItem("twitter-user", JSON.stringify(res.data));
-      }
-    } finally {
-      setIsLoading(false);
+    if (res.data) {
+      setUser(res.data);
+      localStorage.setItem("twitter-user", JSON.stringify(res.data));
     }
   };
 
@@ -240,6 +271,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
+  const setSessionUser = (userData: User) => {
+    setUser(userData);
+    localStorage.setItem("twitter-user", JSON.stringify(userData));
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -250,6 +286,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         logout,
         isLoading,
         googlesignin,
+        setSessionUser,
       }}
     >
       {children}
