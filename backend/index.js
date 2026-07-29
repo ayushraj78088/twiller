@@ -1,18 +1,34 @@
+import dotenv from "dotenv";
+dotenv.config();
+
 import express from "express";
 import cors from "cors";
 import mongoose from "mongoose";
-import dotenv from "dotenv";
 import fs from "fs";
 import path from "path";
 import multer from "multer";
 import { fileURLToPath } from "url";
 
+import Razorpay from "razorpay";
+import Stripe from "stripe";
+
 import User from "./models/user.js";
 import Tweet from "./models/tweet.js";
 import Otp from "./models/otp.js";
 import PasswordReset from "./models/passwordReset.js";
+import Payment from "./models/payment.js";
 import { isWithinISTAudioWindow, validateAudioFile } from "./utils/audioUtils.js";
-import { sendOtpEmail } from "./services/emailService.js";
+import { isWithinISTPaymentWindow, PLAN_LIMITS, PLAN_PRICES, getEffectivePlan } from "./utils/paymentUtils.js";
+import { sendOtpEmail, sendInvoiceEmail } from "./services/emailService.js";
+
+const razorpayInstance = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID || "rzp_test_twiller_key_2026",
+  key_secret: process.env.RAZORPAY_KEY_SECRET || "rzp_test_secret_twiller_2026",
+});
+
+const stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY || "sk_test_twiller_dummy_key", {
+  apiVersion: "2023-10-16",
+});
 
 import { initializeApp as initFirebaseAdmin, getApps } from "firebase-admin/app";
 import { getAuth as getFirebaseAdminAuth } from "firebase-admin/auth";
@@ -417,12 +433,273 @@ app.post("/upload-audio", upload.single("audio"), async (req, res) => {
   }
 });
 
+// ==========================================
+// PAYMENT & SUBSCRIPTION API ENDPOINTS
+// ==========================================
+
+// 1. Payment Status (Time Window Check: 10:00 AM - 11:00 AM IST)
+app.get("/payment-status", (req, res) => {
+  const isAllowed = isWithinISTPaymentWindow();
+  const bypass = req.query.bypassPaymentCheck === "true";
+  const options = {
+    timeZone: "Asia/Kolkata",
+    hour12: true,
+    hour: "numeric",
+    minute: "numeric",
+    second: "numeric",
+  };
+  const currentIST = new Intl.DateTimeFormat("en-US", options).format(new Date());
+
+  return res.status(200).send({
+    allowed: isAllowed || bypass,
+    currentIST,
+    window: "10:00 AM - 11:00 AM IST",
+    bypassActive: bypass,
+  });
+});
+
+// 2. User Quota & Subscription Status
+app.get("/user-subscription/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).send({ error: "User account not found." });
+    }
+
+    const effectivePlan = getEffectivePlan(user);
+    const tweetsPosted = await Tweet.countDocuments({ author: user._id });
+    const remainingTweets =
+      effectivePlan.limit === -1 ? "Unlimited" : Math.max(0, effectivePlan.limit - tweetsPosted);
+
+    return res.status(200).send({
+      userId: user._id,
+      email: user.email,
+      subscriptionPlan: effectivePlan.plan,
+      limit: effectivePlan.limit,
+      tweetsPosted,
+      remainingTweets,
+      subscriptionStatus: user.subscriptionStatus || "active",
+      subscriptionExpiresAt: user.subscriptionExpiresAt,
+      isExpired: effectivePlan.expired,
+    });
+  } catch (error) {
+    return res.status(500).send({ error: error.message });
+  }
+});
+
+// 3. Initiate Payment / Create Order Intent
+app.post("/create-payment-intent", async (req, res) => {
+  try {
+    const { userId, email, planName, bypassPaymentCheck } = req.body;
+
+    if (!userId || !planName) {
+      return res.status(400).send({ error: "User ID and Plan Name are required." });
+    }
+
+    if (!PLAN_PRICES[planName]) {
+      return res.status(400).send({ error: "Invalid subscription plan selected." });
+    }
+
+    // Time window restriction check
+    const bypass =
+      bypassPaymentCheck === true ||
+      bypassPaymentCheck === "true" ||
+      req.query.bypassPaymentCheck === "true";
+
+    if (!isWithinISTPaymentWindow() && !bypass) {
+      return res.status(403).send({
+        error: "Payments and subscription plan upgrades are permitted only between 10:00 AM and 11:00 AM IST.",
+      });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).send({ error: "User account not found." });
+    }
+
+    // Duplicate plan check
+    const effectivePlan = getEffectivePlan(user);
+    if (effectivePlan.plan === planName && !effectivePlan.expired) {
+      return res.status(400).send({ error: `You are already subscribed to the ${planName} Plan.` });
+    }
+
+    const amount = PLAN_PRICES[planName];
+    const orderId = `ORD_${Date.now()}_${Math.floor(1000 + Math.random() * 9000)}`;
+
+    // Generate Razorpay Order
+    let razorpayOrderId = null;
+    try {
+      if (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) {
+        const order = await razorpayInstance.orders.create({
+          amount: amount * 100, // amount in paise
+          currency: "INR",
+          receipt: orderId,
+          notes: { userId: user._id.toString(), planName },
+        });
+        razorpayOrderId = order.id;
+      }
+    } catch (rzpErr) {
+      console.warn("Razorpay order creation note:", rzpErr.message);
+    }
+
+    return res.status(200).send({
+      success: true,
+      orderId,
+      razorpayOrderId: razorpayOrderId || `order_${orderId}`,
+      amount,
+      currency: "INR",
+      planName,
+      userEmail: user.email,
+      userName: user.displayName,
+      keyId: process.env.RAZORPAY_KEY_ID || "rzp_test_twiller_key_2026",
+      gateway: "Razorpay / Stripe",
+    });
+  } catch (error) {
+    return res.status(500).send({ error: error.message });
+  }
+});
+
+// 4. Process Payment & Complete Subscription Upgrade
+app.post("/process-payment", async (req, res) => {
+  try {
+    const { userId, email, planName, transactionId, paymentStatus, bypassPaymentCheck } = req.body;
+
+    if (!userId || !planName || !transactionId) {
+      return res.status(400).send({ error: "User ID, Plan Name, and Transaction ID are required." });
+    }
+
+    if (!PLAN_PRICES[planName]) {
+      return res.status(400).send({ error: "Invalid plan name provided." });
+    }
+
+    // Time Window Restriction Check
+    const bypass =
+      bypassPaymentCheck === true ||
+      bypassPaymentCheck === "true" ||
+      req.query.bypassPaymentCheck === "true";
+
+    if (!isWithinISTPaymentWindow() && !bypass) {
+      return res.status(403).send({
+        error: "Payments and subscription plan upgrades are permitted only between 10:00 AM and 11:00 AM IST.",
+      });
+    }
+
+    // Edge Case: Handle Payment Failure / Cancellation
+    if (paymentStatus === "FAILED" || paymentStatus === "CANCELLED") {
+      return res.status(400).send({
+        error: "Payment failed or was cancelled by user. Subscription plan was not updated.",
+      });
+    }
+
+    // Edge Case: Prevent Duplicate Payments
+    const existingTxn = await Payment.findOne({ transactionId });
+    if (existingTxn) {
+      return res.status(400).send({ error: "Duplicate transaction ID detected. Payment already processed." });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).send({ error: "User account not found." });
+    }
+
+    // Calculate Subscription Expiry (30 days from now)
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+    // Update User Subscription in Database
+    user.subscriptionPlan = planName;
+    user.subscriptionStatus = "active";
+    user.subscriptionExpiresAt = expiresAt;
+    user.lastPaymentTxnId = transactionId;
+    await user.save();
+
+    // Generate Invoice Record
+    const invoiceId = `INV-${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, "0")}${now.getDate().toString().padStart(2, "0")}-${Math.floor(1000 + Math.random() * 9000)}`;
+
+    const amount = PLAN_PRICES[planName];
+    const newPayment = new Payment({
+      userId: user._id,
+      userEmail: user.email,
+      planName,
+      amount,
+      currency: "INR",
+      transactionId,
+      status: "SUCCESS",
+      paymentGateway: "Razorpay/Stripe Test",
+      invoiceId,
+    });
+    await newPayment.save();
+
+    // Format IST Date String for Invoice
+    const options = { timeZone: "Asia/Kolkata", dateStyle: "medium", timeStyle: "short" };
+    const paymentDateStr = new Intl.DateTimeFormat("en-IN", options).format(now);
+    const expiresDateStr = new Intl.DateTimeFormat("en-IN", options).format(expiresAt);
+    const tweetLimitStr = PLAN_LIMITS[planName] === -1 ? "Unlimited Tweets" : `${PLAN_LIMITS[planName]} Tweets / Month`;
+
+    const invoiceData = {
+      invoiceId,
+      transactionId,
+      planName,
+      amount,
+      tweetLimit: tweetLimitStr,
+      paymentDate: paymentDateStr,
+      expiresDate: expiresDateStr,
+      userName: user.displayName,
+    };
+
+    // Edge Case: Email Failure should NEVER cancel the successful subscription!
+    let emailSent = false;
+    try {
+      await sendInvoiceEmail(user.email, invoiceData);
+      emailSent = true;
+    } catch (emailErr) {
+      console.error("⚠️ Invoice Email dispatch note:", emailErr.message);
+    }
+
+    return res.status(200).send({
+      success: true,
+      message: `Subscription successfully upgraded to ${planName} Plan! Invoice sent to ${user.email}`,
+      user,
+      invoice: invoiceData,
+      emailSent,
+    });
+  } catch (error) {
+    return res.status(500).send({ error: error.message });
+  }
+});
+
 // Tweet API
 
-// POST Tweet
+// POST Tweet (Enforces Tweet Limit & Subscription Quota)
 app.post("/post", async (req, res) => {
   try {
-    // If posting an audio tweet, ensure server-side time restriction check
+    const { author } = req.body;
+    if (!author) {
+      return res.status(400).send({ error: "Author is required to post a tweet." });
+    }
+
+    const user = await User.findById(author);
+    if (!user) {
+      return res.status(404).send({ error: "User account not found." });
+    }
+
+    // 1. Tweet Limit Check based on Subscription Plan
+    const effectivePlan = getEffectivePlan(user);
+    if (effectivePlan.limit !== -1) {
+      const postedCount = await Tweet.countDocuments({ author: user._id });
+      if (postedCount >= effectivePlan.limit) {
+        return res.status(403).send({
+          error: `You have reached the posting limit for your ${effectivePlan.plan} Plan (${effectivePlan.limit} tweet${effectivePlan.limit > 1 ? "s" : ""}). Please upgrade your subscription plan to post more tweets.`,
+          limitReached: true,
+          currentPlan: effectivePlan.plan,
+          limit: effectivePlan.limit,
+          postedCount,
+        });
+      }
+    }
+
+    // 2. If posting an audio tweet, ensure server-side time restriction check
     if (req.body.audio && !isWithinISTAudioWindow() && req.query.bypassTimeCheck !== "true") {
       return res.status(403).send({
         error: "Audio tweets can only be posted between 2:00 PM and 7:00 PM IST.",
@@ -430,11 +707,9 @@ app.post("/post", async (req, res) => {
     }
 
     const tweet = new Tweet(req.body);
-
     await tweet.save();
 
     const populatedTweet = await Tweet.findById(tweet._id).populate("author");
-
     io.emit("newTweet", populatedTweet);
 
     return res.status(201).send(populatedTweet);

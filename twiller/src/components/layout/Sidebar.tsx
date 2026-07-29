@@ -12,7 +12,9 @@ import {
   MoreHorizontal,
   Settings,
   LogOut,
+  Crown,
 } from "lucide-react";
+import Link from "next/link";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -70,6 +72,13 @@ export default function Sidebar({
       page: "profile",
     },
     {
+      name: "Premium",
+      icon: Crown,
+      current: currentPage === "subscriptions",
+      page: "subscriptions",
+      highlight: true,
+    },
+    {
       name: "More",
       icon: MoreHorizontal,
       current: currentPage === "more",
@@ -88,7 +97,13 @@ export default function Sidebar({
                 className={`w-full justify-start text-xl py-6 px-4 rounded-full hover:bg-gray-900 ${
                   item.current ? "font-bold" : "font-normal"
                 } text-white hover:text-white`}
-                onClick={() => onNavigate?.(item.page)}
+                onClick={() => {
+                  if (item.page === "subscriptions") {
+                    window.location.href = "/subscriptions";
+                  } else {
+                    onNavigate?.(item.page);
+                  }
+                }}
               >
                 <item.icon className="mr-4 h-7 w-7" />
                 {item.name}
@@ -126,10 +141,18 @@ export default function Sidebar({
               </Avatar>
 
               <div className="flex-1 text-left">
-                <div className="text-white font-semibold">
-                  {user.displayName}
+                <div className="text-white font-semibold flex items-center space-x-1">
+                  <span className="truncate">{user.displayName}</span>
+                  {user.subscriptionPlan && user.subscriptionPlan !== "Free" && (
+                    <span className="text-xs text-yellow-400 font-bold" title={`${user.subscriptionPlan} Plan Subscribed`}>👑</span>
+                  )}
                 </div>
-                <div className="text-gray-400 text-sm">@{user.username}</div>
+                <div className="text-gray-400 text-xs flex items-center space-x-1">
+                  <span>@{user.username}</span>
+                  {user.subscriptionPlan && user.subscriptionPlan !== "Free" && (
+                    <span className="text-blue-400 font-bold">({user.subscriptionPlan})</span>
+                  )}
+                </div>
               </div>
 
               <MoreHorizontal className="h-5 w-5 text-gray-400" />

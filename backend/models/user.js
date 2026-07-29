@@ -13,6 +13,16 @@ const UserSchema = mongoose.Schema({
   joinedDate: { type: Date, default: Date.now() },
   notificationsEnabled: { type: Boolean, default: true },
   lastPasswordResetDate: { type: Date, default: null },
+  
+  // Subscription & Payment Fields
+  subscriptionPlan: {
+    type: String,
+    enum: ["Free", "Bronze", "Silver", "Gold"],
+    default: "Free",
+  },
+  subscriptionStatus: { type: String, default: "active" },
+  subscriptionExpiresAt: { type: Date, default: null },
+  lastPaymentTxnId: { type: String, default: null },
 });
 
 export default mongoose.model("User", UserSchema);

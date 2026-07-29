@@ -6,6 +6,7 @@ import { Input } from "../ui/input";
 import { Card, CardContent } from "../ui/card";
 import { Button } from "../ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import { useAuth } from "@/context/AuthContext";
 
 const suggestions = [
   {
@@ -35,6 +36,7 @@ const suggestions = [
 ];
 
 export default function RightSidebar() {
+  const { user } = useAuth();
   return (
     <div className="w-80 p-4 space-y-4">
       {/* Search */}
@@ -46,19 +48,46 @@ export default function RightSidebar() {
         />
       </div>
 
-      {/* Subscribe to Premium */}
+      {/* Subscribe to Premium Card */}
       <Card className="bg-gray-900 border-gray-800">
         <CardContent className="p-4">
-          <h3 className="text-white text-xl font-bold mb-2">
-            Subscribe to Premium
-          </h3>
-          <p className="text-gray-400 text-sm mb-4">
-            Subscribe to unlock new features and if eligible, receive a share of
-            revenue.
-          </p>
-          <Button className="bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-full">
-            Subscribe
-          </Button>
+          {user?.subscriptionPlan && user.subscriptionPlan !== "Free" ? (
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-white text-lg font-bold flex items-center space-x-2">
+                  <span>{user.subscriptionPlan} Plan</span>
+                  <span className="text-sm">👑</span>
+                </h3>
+                <span className="bg-green-500/20 text-green-400 text-xs px-2.5 py-0.5 rounded-full font-bold border border-green-500/30">
+                  Active
+                </span>
+              </div>
+              <p className="text-gray-400 text-xs mb-4">
+                Your <strong className="text-blue-400">{user.subscriptionPlan} Plan</strong> subscription is active. Enjoy your premium tweeting benefits!
+              </p>
+              <Button
+                className="w-full bg-gray-800 hover:bg-gray-700 text-white font-semibold rounded-full text-sm"
+                onClick={() => (window.location.href = "/subscriptions")}
+              >
+                Manage Subscription
+              </Button>
+            </div>
+          ) : (
+            <div>
+              <h3 className="text-white text-xl font-bold mb-2">
+                Subscribe to Premium
+              </h3>
+              <p className="text-gray-400 text-sm mb-4">
+                Subscribe to unlock higher tweet posting capacity and exclusive premium benefits.
+              </p>
+              <Button
+                className="bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-full"
+                onClick={() => (window.location.href = "/subscriptions")}
+              >
+                Subscribe
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 

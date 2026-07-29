@@ -24,6 +24,10 @@ interface User {
   website: string;
   location: string;
   notificationsEnabled: boolean;
+  subscriptionPlan?: string;
+  subscriptionStatus?: string;
+  subscriptionExpiresAt?: string | null;
+  lastPaymentTxnId?: string;
 }
 
 interface AuthContextType {

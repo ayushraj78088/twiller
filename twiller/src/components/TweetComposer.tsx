@@ -2,6 +2,7 @@
 
 import { useAuth } from "@/context/AuthContext";
 import React, { useRef, useState, useEffect } from "react";
+import Link from "next/link";
 import { Card, CardContent } from "./ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Textarea } from "./ui/textarea";
@@ -148,9 +149,21 @@ const TweetComposer = ({ onTweetPosted }: any) => {
     <Card className="bg-black border-gray-800 border-x-0 border-t-0 rounded-none">
       <CardContent className="p-4">
         {postError && (
-          <div className="mb-3 flex items-center space-x-2 text-red-400 text-sm bg-red-950/50 p-3 rounded-xl border border-red-800/60">
-            <AlertTriangle className="h-4 w-4 shrink-0" />
-            <span>{postError}</span>
+          <div className="mb-3 flex items-start justify-between space-x-2 text-red-400 text-sm bg-red-950/70 p-3.5 rounded-xl border border-red-800/80 animate-in fade-in">
+            <div className="flex items-start space-x-2">
+              <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5 text-red-400" />
+              <div>
+                <p className="font-bold text-white text-xs uppercase tracking-wider">Notice</p>
+                <p className="text-xs text-red-300 mt-0.5 leading-snug">{postError}</p>
+              </div>
+            </div>
+            <Link
+              href="/subscriptions"
+              className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold text-xs px-3.5 py-1.5 rounded-full shrink-0 transition-colors shadow-md flex items-center space-x-1"
+            >
+              <span>Upgrade</span>
+              <span>👑</span>
+            </Link>
           </div>
         )}
 
