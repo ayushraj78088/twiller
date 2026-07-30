@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 import React, { useRef, useState, useEffect } from "react";
 import Link from "next/link";
 import { Card, CardContent } from "./ui/card";
@@ -16,6 +17,7 @@ import OtpModal from "./OtpModal";
 
 const TweetComposer = ({ onTweetPosted }: any) => {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const socketRef = useRef<any>(null);
   const [content, setContent] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -176,7 +178,7 @@ const TweetComposer = ({ onTweetPosted }: any) => {
           <div className="flex-1">
             <form onSubmit={handleSubmit}>
               <Textarea
-                placeholder={audioFile ? "Add an optional caption..." : "What's happening?"}
+                placeholder={audioFile ? "Add an optional caption..." : t("whatsHappening")}
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 className="bg-transparent border-none text-xl text-white placeholder-gray-500 resize-none min-h-[100px] focus-visible:ring-0 focus-visible:ring-offset-0"
@@ -342,7 +344,7 @@ const TweetComposer = ({ onTweetPosted }: any) => {
                       }
                       className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-700 disabled:text-gray-500 text-white font-semibold rounded-full px-6"
                     >
-                      {isLoading ? "Posting..." : "Post"}
+                      {isLoading ? t("posting") : t("post")}
                     </Button>
                   </div>
                 </div>

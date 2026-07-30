@@ -10,6 +10,7 @@ import {
   Camera,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 import { Button } from "./ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
@@ -98,8 +99,11 @@ const tweets: Tweet[] = [
       "https://images.pexels.com/photos/196645/pexels-photo-196645.jpeg?auto=compress&cs=tinysrgb&w=800",
   },
 ];
+import EditProfileModal from "./Editprofile";
+
 export default function ProfilePage() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState("posts");
   const [showEditModal, setShowEditModal] = useState(false);
 
@@ -182,7 +186,7 @@ export default function ProfilePage() {
             className="border-gray-600 text-white bg-gray-950 font-semibold rounded-full px-6"
             onClick={() => setShowEditModal(true)}
           >
-            Edit profile
+            {t("editProfile")}
           </Button>
         </div>
       </div>

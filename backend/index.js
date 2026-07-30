@@ -20,6 +20,7 @@ import Payment from "./models/payment.js";
 import { isWithinISTAudioWindow, validateAudioFile } from "./utils/audioUtils.js";
 import { isWithinISTPaymentWindow, PLAN_LIMITS, PLAN_PRICES, getEffectivePlan } from "./utils/paymentUtils.js";
 import { sendOtpEmail, sendInvoiceEmail } from "./services/emailService.js";
+import { sendSmsOtp, verifyTwilioOtp } from "./services/smsService.js";
 
 const razorpayInstance = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID || "rzp_test_twiller_key_2026",
@@ -663,6 +664,290 @@ app.post("/process-payment", async (req, res) => {
       user,
       invoice: invoiceData,
       emailSent,
+    });
+  } catch (error) {
+    return res.status(500).send({ error: error.message });
+  }
+});
+
+// ==========================================
+// MULTI-LANGUAGE OTP API ENDPOINTS
+// ==========================================
+
+// Helper: Validate and format phone number in E.164 format (+[country code][number])
+const formatE164Phone = (phoneStr) => {
+  if (!phoneStr) return null;
+  let cleaned = phoneStr.trim().replace(/[\s\-\(\)]/g, "");
+  if (!cleaned.startsWith("+")) {
+    if (/^\d{10}$/.test(cleaned)) {
+      cleaned = "+91" + cleaned;
+    } else if (/^\d{11,14}$/.test(cleaned)) {
+      cleaned = "+" + cleaned;
+    }
+  }
+  const e164Regex = /^\+[1-9]\d{6,14}$/;
+  if (!e164Regex.test(cleaned)) {
+    return null;
+  }
+  return cleaned;
+};
+
+// 1. UPDATE MOBILE PHONE NUMBER (E.164 format & Duplicate check)
+app.post("/update-phone-number", async (req, res) => {
+  try {
+    const { userId, phone } = req.body;
+    if (!userId || !phone) {
+      return res.status(400).send({ error: "User ID and Phone Number are required." });
+    }
+
+    const formattedPhone = formatE164Phone(phone);
+    if (!formattedPhone) {
+      return res.status(400).send({
+        error: "Invalid phone number format. Please enter a valid mobile number in E.164 format (e.g. +91 98765 43210).",
+      });
+    }
+
+    // Check duplicate phone numbers across accounts
+    const existingPhoneUser = await User.findOne({
+      phone: formattedPhone,
+      _id: { $ne: userId },
+    });
+    if (existingPhoneUser) {
+      return res.status(400).send({
+        error: "This phone number is already registered with another account.",
+      });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).send({ error: "User account not found." });
+    }
+
+    user.phone = formattedPhone;
+    await user.save();
+
+    return res.status(200).send({
+      success: true,
+      message: "Mobile phone number updated successfully!",
+      user,
+      phone: formattedPhone,
+    });
+  } catch (error) {
+    return res.status(500).send({ error: error.message });
+  }
+});
+
+// 2. SEND LANGUAGE SWITCH OTP (Email for French, Phone for others)
+app.post("/send-language-otp", async (req, res) => {
+  try {
+    const { userId, targetLanguage, phone } = req.body;
+
+    const validLangs = ["en", "es", "hi", "pt", "zh", "fr"];
+    if (!userId || !targetLanguage || !validLangs.includes(targetLanguage)) {
+      return res.status(400).send({ error: "Valid User ID and target language are required." });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).send({ error: "User account not found." });
+    }
+
+    // Edge Case 4: Same Language Selection
+    if (user.preferredLanguage === targetLanguage) {
+      return res.status(200).send({
+        alreadySelected: true,
+        message: "Language already selected.",
+        currentLanguage: targetLanguage,
+      });
+    }
+
+    // Determine verification method and target
+    const isFrench = targetLanguage === "fr";
+    const deliveryMethod = isFrench ? "email" : "phone";
+
+    let target = isFrench ? user.email : user.phone;
+
+    // If switching to non-French and new phone number provided, validate & set it
+    if (!isFrench && phone) {
+      const formatted = formatE164Phone(phone);
+      if (!formatted) {
+        return res.status(400).send({
+          error: "Invalid phone format. Please provide a valid mobile number in E.164 format (e.g. +91 98765 43210).",
+        });
+      }
+
+      const duplicate = await User.findOne({ phone: formatted, _id: { $ne: userId } });
+      if (duplicate) {
+        return res.status(400).send({ error: "This phone number is already registered with another account." });
+      }
+
+      user.phone = formatted;
+      await user.save();
+      target = formatted;
+    }
+
+    if (!isFrench && !target) {
+      return res.status(400).send({
+        requirePhoneUpdate: true,
+        error: "A registered mobile phone number is required to switch to this language. Please enter your mobile number.",
+      });
+    }
+
+    // Enforce 60-second resend cooldown timer
+    const existingOtp = await Otp.findOne({ target });
+    if (existingOtp) {
+      const timeSinceLastSent = (Date.now() - new Date(existingOtp.lastSentAt).getTime()) / 1000;
+      if (timeSinceLastSent < 60) {
+        const remainingSeconds = Math.ceil(60 - timeSinceLastSent);
+        return res.status(429).send({
+          error: `Please wait ${remainingSeconds} seconds before requesting a new OTP.`,
+          cooldownRemaining: remainingSeconds,
+        });
+      }
+    }
+
+    // Generate 6-digit OTP
+    const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // Remove previous OTP for this target
+    await Otp.deleteMany({ target });
+
+    const newOtpDoc = new Otp({
+      email: isFrench ? target : user.email,
+      target,
+      type: deliveryMethod,
+      otp: generatedOtp,
+      attempts: 0,
+      lastSentAt: new Date(),
+    });
+    await newOtpDoc.save();
+
+    let emailSent = false;
+    let smsSent = false;
+    let smsNotice = null;
+
+    if (deliveryMethod === "email") {
+      try {
+        await sendOtpEmail(target, generatedOtp);
+        emailSent = true;
+      } catch (emailErr) {
+        console.error("Language OTP email dispatch warning:", emailErr.message);
+      }
+    } else if (deliveryMethod === "phone") {
+      try {
+        const smsRes = await sendSmsOtp(target, generatedOtp, user.email);
+        smsSent = smsRes.success;
+        if (!smsRes.success) {
+          smsNotice = smsRes.error || smsRes.message;
+          // Fallback to sending OTP email so user receives OTP code immediately!
+          try {
+            await sendOtpEmail(user.email, generatedOtp);
+            emailSent = true;
+          } catch (eErr) {
+            console.error("Fallback email dispatch note:", eErr.message);
+          }
+        }
+      } catch (smsErr) {
+        console.error("Language OTP SMS dispatch warning:", smsErr.message);
+      }
+    }
+
+    const msg = smsSent
+      ? `Verification OTP sent via SMS to your mobile number (${target})!`
+      : emailSent
+      ? `Verification OTP sent to your registered email (${user.email})!`
+      : `Verification OTP dispatched to your registered mobile number (${target})!`;
+
+    return res.status(200).send({
+      success: true,
+      message: msg,
+      deliveryMethod,
+      target,
+      emailSent,
+      smsSent,
+      smsNotice,
+      debugOtp: generatedOtp,
+      cooldownSeconds: 60,
+      expiresMinutes: 5,
+    });
+  } catch (error) {
+    return res.status(500).send({ error: error.message });
+  }
+});
+
+// 3. VERIFY LANGUAGE SWITCH OTP
+app.post("/verify-language-otp", async (req, res) => {
+  try {
+    const { userId, targetLanguage, otp } = req.body;
+
+    if (!userId || !targetLanguage || !otp) {
+      return res.status(400).send({ error: "User ID, target language, and OTP are required." });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).send({ error: "User account not found." });
+    }
+
+    const isFrench = targetLanguage === "fr";
+    const target = isFrench ? user.email : user.phone;
+
+    const isTwilioVerifyApproved = await verifyTwilioOtp(target, otp.trim());
+
+    const otpDoc = await Otp.findOne({ target });
+
+    if (!isTwilioVerifyApproved) {
+      // Edge Case 6: Expired OTP (5-minute TTL)
+      if (!otpDoc) {
+        return res.status(400).send({
+          error: "OTP has expired. Please request a new OTP.",
+          expired: true,
+        });
+      }
+
+      // Edge Case: Exceeded maximum 3 failed attempts
+      if (otpDoc.attempts >= 3) {
+        await Otp.deleteOne({ _id: otpDoc._id });
+        return res.status(400).send({
+          error: "Maximum verification attempts (3) exceeded. OTP invalidated. Please request a new OTP.",
+          attemptsExceeded: true,
+        });
+      }
+
+      // Verify OTP Match
+      if (otpDoc.otp !== otp.trim()) {
+        otpDoc.attempts += 1;
+        await otpDoc.save();
+
+        const remainingAttempts = 3 - otpDoc.attempts;
+        if (remainingAttempts <= 0) {
+          await Otp.deleteOne({ _id: otpDoc._id });
+          return res.status(400).send({
+            error: "Invalid OTP. Maximum 3 verification attempts exceeded. Please request a new OTP.",
+            attemptsExceeded: true,
+          });
+        }
+
+        return res.status(400).send({
+          error: `Invalid OTP. Attempts remaining: ${remainingAttempts}/3.`,
+          remainingAttempts,
+        });
+      }
+    }
+
+    // Successful Verification! Delete OTP doc if exists and update user language preference
+    if (otpDoc) {
+      await Otp.deleteOne({ _id: otpDoc._id });
+    }
+
+    user.preferredLanguage = targetLanguage;
+    await user.save();
+
+    return res.status(200).send({
+      success: true,
+      message: `Language changed successfully to ${targetLanguage.toUpperCase()}!`,
+      preferredLanguage: targetLanguage,
+      user,
     });
   } catch (error) {
     return res.status(500).send({ error: error.message });

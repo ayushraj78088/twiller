@@ -7,6 +7,7 @@ import { Card, CardContent } from "../ui/card";
 import { Button } from "../ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 
 const suggestions = [
   {
@@ -37,13 +38,15 @@ const suggestions = [
 
 export default function RightSidebar() {
   const { user } = useAuth();
+  const { t } = useLanguage();
+
   return (
     <div className="w-80 p-4 space-y-4">
       {/* Search */}
       <div className="relative">
         <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
         <Input
-          placeholder="Search"
+          placeholder={t("search")}
           className="pl-12 bg-gray-900 border-gray-800 text-white placeholder-gray-400 rounded-full py-3"
         />
       </div>
@@ -69,22 +72,22 @@ export default function RightSidebar() {
                 className="w-full bg-gray-800 hover:bg-gray-700 text-white font-semibold rounded-full text-sm"
                 onClick={() => (window.location.href = "/subscriptions")}
               >
-                Manage Subscription
+                {t("manageSubscription")}
               </Button>
             </div>
           ) : (
             <div>
               <h3 className="text-white text-xl font-bold mb-2">
-                Subscribe to Premium
+                {t("subscribeToPremium")}
               </h3>
               <p className="text-gray-400 text-sm mb-4">
-                Subscribe to unlock higher tweet posting capacity and exclusive premium benefits.
+                {t("subscribeDesc")}
               </p>
               <Button
                 className="bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-full"
                 onClick={() => (window.location.href = "/subscriptions")}
               >
-                Subscribe
+                {t("subscribe")}
               </Button>
             </div>
           )}
@@ -94,7 +97,7 @@ export default function RightSidebar() {
       {/* Who to follow */}
       <Card className="bg-gray-900 border-gray-800">
         <CardContent className="p-4">
-          <h3 className="text-white text-xl font-bold mb-4">You might like</h3>
+          <h3 className="text-white text-xl font-bold mb-4">{t("youMightLike")}</h3>
           <div className="space-y-4">
             {suggestions.map((user) => (
               <div key={user.id} className="flex items-center justify-between">
@@ -128,7 +131,7 @@ export default function RightSidebar() {
                   variant="outline"
                   className="bg-white text-black hover:bg-gray-200 font-semibold rounded-full px-4"
                 >
-                  Follow
+                  {t("follow")}
                 </Button>
               </div>
             ))}
@@ -137,7 +140,7 @@ export default function RightSidebar() {
             variant="ghost"
             className="text-blue-400 hover:text-blue-300 p-0 mt-4"
           >
-            Show more
+            {t("showMore")}
           </Button>
         </CardContent>
       </Card>

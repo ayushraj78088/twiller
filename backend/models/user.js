@@ -22,7 +22,12 @@ const UserSchema = mongoose.Schema({
   },
   subscriptionStatus: { type: String, default: "active" },
   subscriptionExpiresAt: { type: Date, default: null },
-  lastPaymentTxnId: { type: String, default: null },
+  // Language Preference Field
+  preferredLanguage: {
+    type: String,
+    enum: ["en", "es", "hi", "pt", "zh", "fr"],
+    default: "en",
+  },
 });
 
 export default mongoose.model("User", UserSchema);

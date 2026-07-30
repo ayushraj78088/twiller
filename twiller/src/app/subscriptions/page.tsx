@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import axiosInstance from "@/lib/axiosInstance";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 import TwitterLogo from "@/components/TwitterLogo";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -36,6 +37,7 @@ interface SubscriptionQuota {
 
 export default function SubscriptionsPage() {
   const { user, setSessionUser } = useAuth();
+  const { t } = useLanguage();
   const [quota, setQuota] = useState<SubscriptionQuota | null>(null);
   const [paymentStatus, setPaymentStatus] = useState<{
     allowed: boolean;
@@ -298,10 +300,10 @@ export default function SubscriptionsPage() {
             <div>
               <h1 className="text-2xl font-bold flex items-center space-x-2">
                 <Crown className="h-6 w-6 text-yellow-400" />
-                <span>Premium Subscriptions</span>
+                <span>{t("premiumSubscriptions")}</span>
               </h1>
               <p className="text-xs text-gray-400">
-                Choose a plan to regulate your posting activity and unlock premium tweeting capacity.
+                {t("choosePlanSubtitle")}
               </p>
             </div>
           </div>
@@ -323,7 +325,7 @@ export default function SubscriptionsPage() {
               </div>
               <div>
                 <div className="flex items-center space-x-2">
-                  <h3 className="font-bold text-base">Payment Window: {paymentStatus.window}</h3>
+                  <h3 className="font-bold text-base">{t("paymentWindow")}: {paymentStatus.window}</h3>
                   <Badge
                     className={`${
                       paymentStatus.allowed
@@ -331,7 +333,7 @@ export default function SubscriptionsPage() {
                         : "bg-amber-500/20 text-amber-400 border-amber-500/40"
                     }`}
                   >
-                    {paymentStatus.allowed ? "WINDOW OPEN (10 AM - 11 AM IST)" : "WINDOW CLOSED"}
+                    {paymentStatus.allowed ? t("windowOpen") : t("windowClosed")}
                   </Badge>
                 </div>
                 <p className="text-xs text-gray-400 mt-1">
@@ -349,7 +351,7 @@ export default function SubscriptionsPage() {
           <Card className="bg-gray-950 border-gray-800 text-white rounded-2xl">
             <CardContent className="p-4 md:p-6 flex flex-col md:flex-row items-center justify-between gap-4">
               <div className="space-y-1">
-                <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold">Active Plan Status</p>
+                <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold">{t("activePlanStatus")}</p>
                 <div className="flex items-center space-x-3">
                   <span className="text-xl font-bold text-blue-400">{quota.subscriptionPlan} Plan</span>
                   <Badge variant="outline" className="text-gray-300 border-gray-700">
@@ -366,14 +368,14 @@ export default function SubscriptionsPage() {
               <div className="flex items-center space-x-6 text-center">
                 <div>
                   <p className="text-2xl font-extrabold text-white">{quota.tweetsPosted}</p>
-                  <p className="text-xs text-gray-400">Tweets Posted</p>
+                  <p className="text-xs text-gray-400">{t("tweetsPosted")}</p>
                 </div>
                 <div className="h-8 w-px bg-gray-800" />
                 <div>
                   <p className="text-2xl font-extrabold text-green-400">
                     {quota.remainingTweets}
                   </p>
-                  <p className="text-xs text-gray-400">Remaining Quota</p>
+                  <p className="text-xs text-gray-400">{t("remainingQuota")}</p>
                 </div>
               </div>
             </CardContent>

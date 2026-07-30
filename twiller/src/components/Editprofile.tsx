@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { Camera, LinkIcon, MapPin, X } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { useLanguage } from "@/context/LanguageContext";
 import { Label } from "./ui/label";
 import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
@@ -24,6 +25,7 @@ const Editprofile = ({ isopen, onclose }: any) => {
   });
 
   const [error, setError] = useState<any>({});
+  const { t } = useLanguage();
 
   if (!isopen || !user) return null;
 
@@ -131,7 +133,7 @@ const Editprofile = ({ isopen, onclose }: any) => {
               >
                 <X className="h-5 w-5" />
               </Button>
-              <CardTitle className="text-xl font-bold">Edit profile</CardTitle>
+              <CardTitle className="text-xl font-bold">{t("editProfile")}</CardTitle>
             </div>
             <Button
               type="submit"
@@ -145,7 +147,7 @@ const Editprofile = ({ isopen, onclose }: any) => {
                   <span>Saving...</span>
                 </div>
               ) : (
-                "Save"
+                t("save")
               )}
             </Button>
           </div>

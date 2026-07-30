@@ -26,6 +26,8 @@ import {
 import { Button } from "../ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
+import LanguageSelector from "../LanguageSelector";
 
 interface SidebarProps {
   currentPage?: string;
@@ -37,49 +39,50 @@ export default function Sidebar({
   onNavigate,
 }: SidebarProps) {
   const { user, logout } = useAuth();
+  const { t } = useLanguage();
 
   const navigation = [
-    { name: "Home", icon: Home, current: currentPage === "home", page: "home" },
+    { name: t("home"), icon: Home, current: currentPage === "home", page: "home" },
     {
-      name: "Explore",
+      name: t("explore"),
       icon: Search,
       current: currentPage === "explore",
       page: "explore",
     },
     {
-      name: "Notifications",
+      name: t("notifications"),
       icon: Bell,
       current: currentPage === "notifications",
       page: "notifications",
       badge: true,
     },
     {
-      name: "Messages",
+      name: t("messages"),
       icon: Mail,
       current: currentPage === "messages",
       page: "messages",
     },
     {
-      name: "Bookmarks",
+      name: t("bookmarks"),
       icon: Bookmark,
       current: currentPage === "bookmarks",
       page: "bookmarks",
     },
     {
-      name: "Profile",
+      name: t("profile"),
       icon: User,
       current: currentPage === "profile",
       page: "profile",
     },
     {
-      name: "Premium",
+      name: t("premium"),
       icon: Crown,
       current: currentPage === "subscriptions",
       page: "subscriptions",
       highlight: true,
     },
     {
-      name: "More",
+      name: t("more"),
       icon: MoreHorizontal,
       current: currentPage === "more",
       page: "more",
@@ -117,9 +120,11 @@ export default function Sidebar({
           ))}
         </ul>
 
-        <div className="mt-8 px-2">
+        <div className="mt-4 px-2 space-y-3">
+          <LanguageSelector />
+
           <Button className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 rounded-full text-lg">
-            Post
+            {t("post")}
           </Button>
         </div>
       </nav>

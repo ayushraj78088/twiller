@@ -28,6 +28,8 @@ interface User {
   subscriptionStatus?: string;
   subscriptionExpiresAt?: string | null;
   lastPaymentTxnId?: string;
+  phone?: string;
+  preferredLanguage?: string;
 }
 
 interface AuthContextType {
