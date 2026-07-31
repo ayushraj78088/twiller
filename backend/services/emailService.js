@@ -73,26 +73,34 @@ export async function sendOtpEmail(toEmail, otp, options = {}) {
     }
   }
 
-  // 3. Fallback: Ethereal Email test inbox
+  // 3. Fallback: Ethereal Email test inbox (max 3-second timeout guard)
   try {
-    const testAccount = await nodemailer.createTestAccount();
-    const testTransporter = nodemailer.createTransport({
-      host: "smtp.ethereal.email",
-      port: 587,
-      secure: false,
-      auth: { user: testAccount.user, pass: testAccount.pass },
-    });
+    const etherealPromise = (async () => {
+      const testAccount = await nodemailer.createTestAccount();
+      const testTransporter = nodemailer.createTransport({
+        host: "smtp.ethereal.email",
+        port: 587,
+        secure: false,
+        auth: { user: testAccount.user, pass: testAccount.pass },
+      });
 
-    const info = await testTransporter.sendMail({
-      from: '"Twiller Security" <no-reply@twiller.app>',
-      to: toEmail,
-      subject: subject,
-      html: htmlContent,
-    });
+      const info = await testTransporter.sendMail({
+        from: '"Twiller Security" <no-reply@twiller.app>',
+        to: toEmail,
+        subject: subject,
+        html: htmlContent,
+      });
 
-    const previewUrl = nodemailer.getTestMessageUrl(info);
-    console.log(`📬 Ethereal Preview URL: ${previewUrl}`);
-    return { success: true, previewUrl };
+      const previewUrl = nodemailer.getTestMessageUrl(info);
+      console.log(`📬 Ethereal Preview URL: ${previewUrl}`);
+      return { success: true, previewUrl };
+    })();
+
+    const timeoutPromise = new Promise((resolve) =>
+      setTimeout(() => resolve({ success: true, previewUrl: null }), 3000)
+    );
+
+    return await Promise.race([etherealPromise, timeoutPromise]);
   } catch (err) {
     console.error("❌ Ethereal fallback error:", err.message);
   }
@@ -217,24 +225,32 @@ export async function sendInvoiceEmail(toEmail, invoiceData) {
     }
   }
 
-  // 3. Ethereal fallback
+  // 3. Ethereal fallback with 3-second timeout
   try {
-    const testAccount = await nodemailer.createTestAccount();
-    const testTransporter = nodemailer.createTransport({
-      host: "smtp.ethereal.email",
-      port: 587,
-      secure: false,
-      auth: { user: testAccount.user, pass: testAccount.pass },
-    });
-    const info = await testTransporter.sendMail({
-      from: '"Twiller Invoicing" <no-reply@twiller.app>',
-      to: toEmail,
-      subject: subject,
-      html: htmlContent,
-    });
-    const previewUrl = nodemailer.getTestMessageUrl(info);
-    console.log(`📬 Ethereal Invoice Preview URL: ${previewUrl}`);
-    return { success: true, previewUrl };
+    const etherealPromise = (async () => {
+      const testAccount = await nodemailer.createTestAccount();
+      const testTransporter = nodemailer.createTransport({
+        host: "smtp.ethereal.email",
+        port: 587,
+        secure: false,
+        auth: { user: testAccount.user, pass: testAccount.pass },
+      });
+      const info = await testTransporter.sendMail({
+        from: '"Twiller Invoicing" <no-reply@twiller.app>',
+        to: toEmail,
+        subject: subject,
+        html: htmlContent,
+      });
+      const previewUrl = nodemailer.getTestMessageUrl(info);
+      console.log(`📬 Ethereal Invoice Preview URL: ${previewUrl}`);
+      return { success: true, previewUrl };
+    })();
+
+    const timeoutPromise = new Promise((resolve) =>
+      setTimeout(() => resolve({ success: true, previewUrl: null }), 3000)
+    );
+
+    return await Promise.race([etherealPromise, timeoutPromise]);
   } catch (err) {
     console.error("❌ Ethereal fallback error:", err.message);
   }
