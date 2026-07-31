@@ -79,6 +79,10 @@ const Feed = () => {
 
       notifiedTweets.current.add(tweet._id);
 
+      const currentCount = parseInt(localStorage.getItem("notification-count") || "0", 10) + 1;
+      localStorage.setItem("notification-count", String(currentCount));
+      window.dispatchEvent(new Event("notification-updated"));
+
       const notification = new Notification(
         `${tweet.author.displayName} posted`,
         {

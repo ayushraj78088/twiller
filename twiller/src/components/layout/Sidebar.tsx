@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 
 import {
   Home,
@@ -40,6 +40,18 @@ export default function Sidebar({
 }: SidebarProps) {
   const { user, logout } = useAuth();
   const { t } = useLanguage();
+  const [notificationCount, setNotificationCount] = useState<number>(0);
+
+  useEffect(() => {
+    const updateCount = () => {
+      const stored = localStorage.getItem("notification-count");
+      setNotificationCount(stored ? parseInt(stored, 10) : 0);
+    };
+
+    updateCount();
+    window.addEventListener("notification-updated", updateCount);
+    return () => window.removeEventListener("notification-updated", updateCount);
+  }, []);
 
   const navigation = [
     { name: t("home"), icon: Home, current: currentPage === "home", page: "home" },
@@ -101,6 +113,10 @@ export default function Sidebar({
                   item.current ? "font-bold" : "font-normal"
                 } text-white hover:text-white`}
                 onClick={() => {
+                  if (item.page === "notifications") {
+                    localStorage.setItem("notification-count", "0");
+                    setNotificationCount(0);
+                  }
                   if (item.page === "subscriptions") {
                     window.location.href = "/subscriptions";
                   } else {
@@ -110,9 +126,9 @@ export default function Sidebar({
               >
                 <item.icon className="mr-4 h-7 w-7" />
                 {item.name}
-                {item.badge && (
-                  <span className="ml-2 bg-blue-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                    3
+                {item.badge && notificationCount > 0 && (
+                  <span className="ml-2 bg-blue-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold animate-pulse">
+                    {notificationCount}
                   </span>
                 )}
               </Button>
