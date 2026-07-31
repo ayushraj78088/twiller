@@ -175,18 +175,24 @@ app.post("/send-otp", async (req, res) => {
       return res.status(400).send({ error: "Email is required to send OTP." });
     }
 
+    const cleanEmail = email.trim().toLowerCase();
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
 
     // Remove any previous OTP for this email
-    await Otp.deleteMany({ email });
+    await Otp.deleteMany({ $or: [{ email: cleanEmail }, { target: cleanEmail }] });
 
-    const newOtp = new Otp({ email, otp: otpCode });
+    const newOtp = new Otp({
+      email: cleanEmail,
+      target: cleanEmail,
+      type: "email",
+      otp: otpCode,
+    });
     await newOtp.save();
 
-    const emailResult = await sendOtpEmail(email, otpCode);
+    const emailResult = await sendOtpEmail(cleanEmail, otpCode);
 
     return res.status(200).send({
-      message: "OTP sent successfully to " + email,
+      message: "OTP sent successfully to " + cleanEmail,
       previewUrl: emailResult?.previewUrl || null,
     });
   } catch (error) {
@@ -202,7 +208,14 @@ app.post("/verify-otp", async (req, res) => {
       return res.status(400).send({ error: "Email and OTP code are required." });
     }
 
-    const record = await Otp.findOne({ email, otp });
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanOtp = otp.toString().trim();
+
+    const record = await Otp.findOne({
+      $or: [{ email: cleanEmail }, { target: cleanEmail }],
+      otp: cleanOtp,
+    });
+
     if (!record) {
       return res.status(400).send({ error: "Invalid or expired OTP code." });
     }
