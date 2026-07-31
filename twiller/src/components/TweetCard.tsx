@@ -113,7 +113,7 @@ export default function TweetCard({ tweet }: any) {
                 </div>
                 <audio
                   controls
-                  src={tweetstate.audio}
+                  src={tweetstate.audio?.replace(/^http:\/\//i, "https://")}
                   className="w-full h-10 rounded-lg focus:outline-none"
                 />
               </div>

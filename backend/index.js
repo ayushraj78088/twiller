@@ -604,10 +604,13 @@ app.post("/upload-audio", upload.single("audio"), async (req, res) => {
       return res.status(400).send({ error: validation.error });
     }
 
-    // Return the accessible audio URL
-    const protocol = req.protocol;
+    // Return the accessible audio URL with HTTPS scheme
+    const protocol = req.headers["x-forwarded-proto"] || req.protocol || "https";
     const host = req.get("host");
-    const audioUrl = `${protocol}://${host}/uploads/audio/${req.file.filename}`;
+    let audioUrl = `${protocol}://${host}/uploads/audio/${req.file.filename}`;
+    if (audioUrl.startsWith("http://")) {
+      audioUrl = audioUrl.replace(/^http:\/\//i, "https://");
+    }
 
     return res.status(200).send({ audioUrl });
   } catch (error) {
