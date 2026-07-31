@@ -1177,8 +1177,9 @@ app.post("/post", async (req, res) => {
 // get all tweet
 app.get("/post", async (req, res) => {
   try {
-    const tweet = await Tweet.find().sort({ timestamp: -1 }).populate("author");
-    return res.status(200).send(tweet);
+    const tweets = await Tweet.find().sort({ timestamp: -1 }).populate("author");
+    const validTweets = tweets.filter((t) => t && t.author);
+    return res.status(200).send(validTweets);
   } catch (error) {
     return res.status(400).send({ error: error.message });
   }

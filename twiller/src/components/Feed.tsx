@@ -83,11 +83,12 @@ const Feed = () => {
       localStorage.setItem("notification-count", String(currentCount));
       window.dispatchEvent(new Event("notification-updated"));
 
+      const authorName = tweet?.author?.displayName || "Someone";
       const notification = new Notification(
-        `${tweet.author.displayName} posted`,
+        `${authorName} posted`,
         {
           body: tweet.content,
-          icon: tweet.author?.avatar,
+          icon: tweet?.author?.avatar,
         },
       );
 

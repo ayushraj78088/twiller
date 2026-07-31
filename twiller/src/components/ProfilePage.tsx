@@ -145,7 +145,7 @@ export default function ProfilePage() {
   }, [user?._id]);
   // Filter tweets by current user
   const userTweets = tweets.filter(
-    (tweet: any) => tweet.author._id === user._id,
+    (tweet: any) => tweet && tweet.author && tweet.author._id === user?._id,
   );
 
   return (
