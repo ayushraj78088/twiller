@@ -604,15 +604,14 @@ app.post("/upload-audio", upload.single("audio"), async (req, res) => {
       return res.status(400).send({ error: validation.error });
     }
 
-    // Return the accessible audio URL with HTTPS scheme
-    const protocol = req.headers["x-forwarded-proto"] || req.protocol || "https";
-    const host = req.get("host");
-    let audioUrl = `${protocol}://${host}/uploads/audio/${req.file.filename}`;
-    if (audioUrl.startsWith("http://")) {
-      audioUrl = audioUrl.replace(/^http:\/\//i, "https://");
-    }
+    // Convert audio buffer to persistent Base64 Data URL so it is preserved in MongoDB Atlas across Render container restarts
+    const mimeType = req.file.mimetype || "audio/webm";
+    const base64Audio = `data:${mimeType};base64,${fileBuffer.toString("base64")}`;
 
-    return res.status(200).send({ audioUrl });
+    // Clean up temporary disk file
+    fs.unlink(req.file.path, () => {});
+
+    return res.status(200).send({ audioUrl: base64Audio });
   } catch (error) {
     if (req.file) {
       fs.unlink(req.file.path, () => {});
