@@ -12,6 +12,7 @@ import { Input } from "./ui/input";
 import { Separator } from "./ui/separator";
 import { useAuth } from "@/context/AuthContext";
 import TwitterLogo from "./TwitterLogo";
+import LoginOtpModal from "./LoginOtpModal";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -28,6 +29,11 @@ export default function AuthModal({
   const [mode, setMode] = useState<"login" | "signup">(initialMode);
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showLoginOtpModal, setShowLoginOtpModal] = useState(false);
+  const [loginOtpState, setLoginOtpState] = useState<{ email: string; userId: string }>({
+    email: "",
+    userId: "",
+  });
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -36,7 +42,7 @@ export default function AuthModal({
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  if (!isOpen) return null;
+  if (!isOpen && !showLoginOtpModal) return null;
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -80,6 +86,12 @@ export default function AuthModal({
     try {
       if (mode === "login") {
         const res = await login(formData.email, formData.password);
+        if (res && res.requiresOtp) {
+          setLoginOtpState({ email: res.email || formData.email, userId: res.userId || "" });
+          setShowLoginOtpModal(true);
+          setIsSubmitting(false);
+          return;
+        }
         if (res && !res.success) {
           setErrors({ general: res.error || "Invalid credentials" });
           return;
@@ -319,6 +331,17 @@ export default function AuthModal({
           )}
         </CardContent>
       </Card>
+
+      <LoginOtpModal
+        isOpen={showLoginOtpModal}
+        onClose={() => setShowLoginOtpModal(false)}
+        email={loginOtpState.email}
+        userId={loginOtpState.userId}
+        onSuccess={() => {
+          setShowLoginOtpModal(false);
+          onClose();
+        }}
+      />
     </div>
   );
 }

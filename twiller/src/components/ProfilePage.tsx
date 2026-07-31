@@ -110,6 +110,9 @@ export default function ProfilePage() {
   if (!user) return null;
   const [tweets, setTweets] = useState<any>([]);
   const [loading, setloading] = useState(false);
+  const [loginHistory, setLoginHistory] = useState<any[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+
   const fetchTweets = async () => {
     try {
       setloading(true);
@@ -121,9 +124,25 @@ export default function ProfilePage() {
       setloading(false);
     }
   };
+
+  const fetchLoginHistory = async () => {
+    try {
+      setLoadingHistory(true);
+      const res = await axiosInstance.get("/user/login-history", {
+        params: { email: user.email, userId: user._id },
+      });
+      setLoginHistory(res.data || []);
+    } catch (error) {
+      console.error("Failed to fetch login history:", error);
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
+
   useEffect(() => {
     fetchTweets();
-  }, []);
+    fetchLoginHistory();
+  }, [user?._id]);
   // Filter tweets by current user
   const userTweets = tweets.filter(
     (tweet: any) => tweet.author._id === user._id,
@@ -240,36 +259,42 @@ export default function ProfilePage() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-5 bg-transparent border-b border-gray-800 rounded-none h-auto">
+        <TabsList className="grid w-full grid-cols-6 bg-transparent border-b border-gray-800 rounded-none h-auto">
           <TabsTrigger
             value="posts"
-            className="data-[state=active]:bg-transparent data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-blue-500 data-[state=active]:rounded-none text-gray-400 hover:bg-gray-900/50 py-4 font-semibold"
+            className="data-[state=active]:bg-transparent data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-blue-500 data-[state=active]:rounded-none text-gray-400 hover:bg-gray-900/50 py-4 font-semibold text-xs sm:text-sm"
           >
             Posts
           </TabsTrigger>
           <TabsTrigger
             value="replies"
-            className="data-[state=active]:bg-transparent data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-blue-500 data-[state=active]:rounded-none text-gray-400 hover:bg-gray-900/50 py-4 font-semibold"
+            className="data-[state=active]:bg-transparent data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-blue-500 data-[state=active]:rounded-none text-gray-400 hover:bg-gray-900/50 py-4 font-semibold text-xs sm:text-sm"
           >
             Replies
           </TabsTrigger>
           <TabsTrigger
             value="highlights"
-            className="data-[state=active]:bg-transparent data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-blue-500 data-[state=active]:rounded-none text-gray-400 hover:bg-gray-900/50 py-4 font-semibold"
+            className="data-[state=active]:bg-transparent data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-blue-500 data-[state=active]:rounded-none text-gray-400 hover:bg-gray-900/50 py-4 font-semibold text-xs sm:text-sm"
           >
             Highlights
           </TabsTrigger>
           <TabsTrigger
             value="articles"
-            className="data-[state=active]:bg-transparent data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-blue-500 data-[state=active]:rounded-none text-gray-400 hover:bg-gray-900/50 py-4 font-semibold"
+            className="data-[state=active]:bg-transparent data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-blue-500 data-[state=active]:rounded-none text-gray-400 hover:bg-gray-900/50 py-4 font-semibold text-xs sm:text-sm"
           >
             Articles
           </TabsTrigger>
           <TabsTrigger
             value="media"
-            className="data-[state=active]:bg-transparent data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-blue-500 data-[state=active]:rounded-none text-gray-400 hover:bg-gray-900/50 py-4 font-semibold"
+            className="data-[state=active]:bg-transparent data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-blue-500 data-[state=active]:rounded-none text-gray-400 hover:bg-gray-900/50 py-4 font-semibold text-xs sm:text-sm"
           >
             Media
+          </TabsTrigger>
+          <TabsTrigger
+            value="history"
+            className="data-[state=active]:bg-transparent data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-blue-500 data-[state=active]:rounded-none text-gray-400 hover:bg-gray-900/50 py-4 font-semibold text-xs sm:text-sm"
+          >
+            Login History
           </TabsTrigger>
         </TabsList>
 
@@ -342,6 +367,77 @@ export default function ProfilePage() {
                 </h3>
                 <p>When you post photos or videos, they will show up here.</p>
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Task 6: Login Session History */}
+        <TabsContent value="history" className="mt-0 p-4">
+          <Card className="bg-gray-950 border-gray-800 text-white rounded-2xl overflow-hidden">
+            <CardContent className="p-4 md:p-6 space-y-4">
+              <div className="flex items-center justify-between border-b border-gray-800 pb-3">
+                <div>
+                  <h3 className="text-lg font-bold">Login Session History</h3>
+                  <p className="text-xs text-gray-400">
+                    Transparent log of all recent login attempts, IP addresses, browsers, and devices.
+                  </p>
+                </div>
+                <span className="text-xs font-mono bg-blue-500/20 text-blue-400 border border-blue-500/30 px-3 py-1 rounded-full font-bold">
+                  {loginHistory.length} Sessions Logged
+                </span>
+              </div>
+
+              {loadingHistory ? (
+                <div className="py-12 text-center text-gray-400">Loading session records...</div>
+              ) : loginHistory.length === 0 ? (
+                <div className="py-12 text-center text-gray-400">No login attempts recorded yet.</div>
+              ) : (
+                <div className="space-y-3">
+                  {loginHistory.map((item: any, idx: number) => {
+                    const isSuccess = item.status === "Success";
+                    const isPending = item.status?.includes("Pending");
+                    const statusBg = isSuccess
+                      ? "bg-green-500/20 text-green-400 border-green-500/30"
+                      : isPending
+                      ? "bg-amber-500/20 text-amber-400 border-amber-500/30"
+                      : "bg-red-500/20 text-red-400 border-red-500/30";
+
+                    return (
+                      <div
+                        key={idx}
+                        className="bg-gray-900/80 p-4 rounded-xl border border-gray-800 flex flex-col md:flex-row md:items-center justify-between gap-3 hover:border-gray-700 transition-colors"
+                      >
+                        <div className="space-y-1">
+                          <div className="flex items-center space-x-2">
+                            <span className="font-bold text-white text-sm">{item.browser || "Unknown Browser"}</span>
+                            <span className="text-xs text-gray-400">({item.os || "Unknown OS"})</span>
+                            <span className="text-xs bg-gray-800 text-gray-300 px-2 py-0.5 rounded-md font-semibold">
+                              {item.device || "Desktop"}
+                            </span>
+                          </div>
+                          <div className="flex items-center space-x-3 text-xs text-gray-400 font-mono">
+                            <span>
+                              IP: <strong className="text-blue-400">
+                                {!item.ipAddress || item.ipAddress === "::1" || item.ipAddress === "::ffff:127.0.0.1"
+                                  ? "127.0.0.1 (Localhost)"
+                                  : item.ipAddress.replace(/^::ffff:/, "")}
+                              </strong>
+                            </span>
+                            <span>•</span>
+                            <span>{new Date(item.timestamp).toLocaleString("en-IN")}</span>
+                          </div>
+                        </div>
+
+                        <div className="shrink-0">
+                          <span className={`text-xs px-3 py-1 rounded-full font-bold border ${statusBg}`}>
+                            {item.status}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

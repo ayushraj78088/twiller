@@ -130,6 +130,11 @@ const Feed = () => {
     };
   }, []);
 
+  const handleTweetPosted = (newTweet: Tweet) => {
+    setTweets((prev: Tweet[]) => [newTweet, ...prev]);
+    showNotifications([newTweet]);
+  };
+
   return (
     <div className="min-h-screen">
       <div className="sticky top-0 bg-black/90 backdrop-blur-md border-b border-gray-800 z-10">
@@ -154,7 +159,7 @@ const Feed = () => {
           </TabsList>
         </Tabs>
       </div>
-      <TweetComposer onTweetPosted={() => {}} />
+      <TweetComposer onTweetPosted={handleTweetPosted} />
       <div className="divide-y divide-gray-800">
         {loading ? (
           <Card className="bg-black border-none">

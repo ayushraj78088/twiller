@@ -21,6 +21,7 @@ import { isWithinISTAudioWindow, validateAudioFile } from "./utils/audioUtils.js
 import { isWithinISTPaymentWindow, PLAN_LIMITS, PLAN_PRICES, getEffectivePlan } from "./utils/paymentUtils.js";
 import { sendOtpEmail, sendInvoiceEmail } from "./services/emailService.js";
 import { sendSmsOtp, verifyTwilioOtp } from "./services/smsService.js";
+import { getRealIp, parseUserAgent, isWithinMobileLoginWindow } from "./utils/loginUtils.js";
 
 const razorpayInstance = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID || "rzp_test_twiller_key_2026",
@@ -293,10 +294,13 @@ app.post("/request-password-reset", async (req, res) => {
   }
 });
 
-// Login Check endpoint
+// Login Check endpoint with Task 6 Session History & Security Rules
 app.post("/login-check", async (req, res) => {
   try {
     const { email, password } = req.body;
+    const ipAddress = getRealIp(req);
+    const { browser, os, device } = parseUserAgent(req);
+
     if (!email || !password) {
       return res.status(400).send({ error: "Email and password are required." });
     }
@@ -312,12 +316,179 @@ app.post("/login-check", async (req, res) => {
 
     // Verify password match strictly
     if (!user.password || user.password !== password.trim()) {
+      // Record Failed Password Attempt
+      user.loginHistory.push({
+        browser,
+        os,
+        device,
+        ipAddress,
+        timestamp: new Date(),
+        status: "Failed (Wrong Password)",
+      });
+      await user.save();
       return res.status(400).send({ error: "Invalid credentials" });
     }
+
+    // Rule 1: Mobile Device Time Window Check (10:00 AM - 1:00 PM IST)
+    if (device === "Mobile") {
+      const windowCheck = isWithinMobileLoginWindow();
+      if (!windowCheck.allowed) {
+        user.loginHistory.push({
+          browser,
+          os,
+          device,
+          ipAddress,
+          timestamp: new Date(),
+          status: "Failed (Mobile Outside Window)",
+        });
+        await user.save();
+        return res.status(403).send({
+          error: `Mobile login access is allowed strictly between 10:00 AM and 1:00 PM IST (Current IST Time: ${windowCheck.currentIST}).`,
+          mobileRestricted: true,
+        });
+      }
+    }
+
+    // Rule 2: Browser-based Authentication Routing
+    // Google Chrome requires Email OTP verification
+    if (browser === "Google Chrome") {
+      const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+      // Clear previous OTP for this user email
+      await Otp.deleteMany({ email: user.email });
+
+      const newOtp = new Otp({
+        email: user.email,
+        target: user.email,
+        type: "email",
+        otp: otpCode,
+        attempts: 0,
+        lastSentAt: new Date(),
+      });
+      await newOtp.save();
+
+      // Dispatch 6-digit OTP to registered email
+      try {
+        await sendOtpEmail(user.email, otpCode);
+      } catch (eErr) {
+        console.error("Chrome Login OTP email warning:", eErr.message);
+      }
+
+      // Record Pending Chrome OTP status in login history
+      user.loginHistory.push({
+        browser,
+        os,
+        device,
+        ipAddress,
+        timestamp: new Date(),
+        status: "Pending Chrome OTP",
+      });
+      await user.save();
+
+      return res.status(200).send({
+        requiresOtp: true,
+        email: user.email,
+        userId: user._id,
+        browser,
+        message: "Google Chrome login requires OTP verification sent to your registered Email address.",
+      });
+    }
+
+    // Microsoft Edge / Internet Explorer or Other Browsers: Direct Login (No OTP)
+    user.loginHistory.push({
+      browser,
+      os,
+      device,
+      ipAddress,
+      timestamp: new Date(),
+      status: "Success",
+    });
+    await user.save();
 
     return res.status(200).send(user);
   } catch (error) {
     return res.status(400).send({ error: error.message });
+  }
+});
+
+// Verify Google Chrome Login OTP
+app.post("/verify-login-check-otp", async (req, res) => {
+  try {
+    const { userId, email, otp } = req.body;
+    const ipAddress = getRealIp(req);
+    const { browser, os, device } = parseUserAgent(req);
+
+    if (!email || !otp) {
+      return res.status(400).send({ error: "Email and OTP code are required." });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+    const user = userId ? await User.findById(userId) : await User.findOne({ email: cleanEmail });
+
+    if (!user) {
+      return res.status(404).send({ error: "User account not found." });
+    }
+
+    const otpDoc = await Otp.findOne({ email: user.email });
+
+    if (!otpDoc || otpDoc.otp !== otp.trim()) {
+      // Record Failed Invalid/Expired OTP attempt
+      user.loginHistory.push({
+        browser,
+        os,
+        device,
+        ipAddress,
+        timestamp: new Date(),
+        status: "Failed (Invalid/Expired OTP)",
+      });
+      await user.save();
+      return res.status(400).send({ error: "Invalid or expired OTP code. Please try again." });
+    }
+
+    // OTP Verified! Delete OTP document
+    await Otp.deleteOne({ _id: otpDoc._id });
+
+    // Record Success in Login History
+    user.loginHistory.push({
+      browser,
+      os,
+      device,
+      ipAddress,
+      timestamp: new Date(),
+      status: "Success",
+    });
+    await user.save();
+
+    return res.status(200).send(user);
+  } catch (error) {
+    return res.status(500).send({ error: error.message });
+  }
+});
+
+// Secure Authenticated GET Login History endpoint for User Profile
+app.get("/user/login-history", async (req, res) => {
+  try {
+    const { email, userId } = req.query;
+    if (!email && !userId) {
+      return res.status(400).send({ error: "User email or ID required." });
+    }
+
+    const user = userId
+      ? await User.findById(userId)
+      : await User.findOne({ email: email.toString().trim().toLowerCase() });
+
+    if (!user) {
+      return res.status(404).send({ error: "User not found." });
+    }
+
+    // Return login history sorted by timestamp descending
+    const history = (user.loginHistory || []).sort(
+      (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    );
+
+    return res.status(200).send(history);
+  } catch (error) {
+    return res.status(500).send({ error: error.message });
   }
 });
 

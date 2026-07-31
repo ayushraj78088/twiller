@@ -34,7 +34,13 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  login: (email: string, password: string) => Promise<{
+    success: boolean;
+    requiresOtp?: boolean;
+    userId?: string;
+    email?: string;
+    error?: string;
+  }>;
 
   signup: (
     email: string,
@@ -108,7 +114,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     return () => unsubcribe();
   }, []);
 
-  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+  const login = async (
+    email: string,
+    password: string
+  ): Promise<{
+    success: boolean;
+    requiresOtp?: boolean;
+    userId?: string;
+    email?: string;
+    error?: string;
+  }> => {
     try {
       // 1. Try Firebase Auth signin
       let firebaseUser = null;
@@ -120,18 +135,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       }
 
       // 2. Query backend login-check endpoint
-      let backendUser = null;
+      let backendData = null;
       let backendError = null;
       try {
         const res = await axiosInstance.post("/login-check", { email, password });
-        backendUser = res.data;
+        backendData = res.data;
       } catch (apiErr: any) {
         backendError = apiErr.response?.data?.error || "Invalid credentials";
       }
 
-      if (backendUser) {
-        setUser(backendUser);
-        localStorage.setItem("twitter-user", JSON.stringify(backendUser));
+      if (backendData?.requiresOtp) {
+        return {
+          success: false,
+          requiresOtp: true,
+          userId: backendData.userId,
+          email: backendData.email,
+          error: backendData.message,
+        };
+      }
+
+      if (backendData && backendData._id) {
+        setUser(backendData);
+        localStorage.setItem("twitter-user", JSON.stringify(backendData));
         return { success: true };
       }
 
