@@ -104,16 +104,28 @@ const Editprofile = ({ isopen, onclose }: any) => {
     const formdataimg = new FormData();
     formdataimg.set("image", image);
     try {
+      const apiKey =
+        process.env.NEXT_PUBLIC_IMGBB_API_KEY ||
+        process.env.IMGBB_API_KEY ||
+        "c008f41020bc12d2886285c71da7c1f8";
+
       const res = await axios.post(
-        `https://api.imgbb.com/1/upload?key=${process.env.IMGBB_API_KEY}`,
+        `https://api.imgbb.com/1/upload?key=${apiKey}`,
         formdataimg,
       );
-      const url = res.data.data.display_url;
+      const url = res.data?.data?.display_url;
       if (url) {
         setFormdata((prev) => ({ ...prev, avatar: url }));
       }
     } catch (error) {
-      console.log(error);
+      console.error("ImgBB upload error, using FileReader fallback:", error);
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          setFormdata((prev) => ({ ...prev, avatar: event.target!.result as string }));
+        }
+      };
+      reader.readAsDataURL(image);
     } finally {
       setIsLoading(false);
     }
