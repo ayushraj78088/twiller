@@ -137,6 +137,9 @@ export const translations: Record<LanguageCode, Record<string, string>> = {
     setNewPassword: "Set new password",
     resetPasswordAndLogin: "Reset Password & Login",
     backToSignIn: "Back to Sign In",
+    sendResetCode: "Send Reset Code",
+    saving: "Saving...",
+    generateLettersOnlyPassword: "Generate Letters-Only Password",
   },
 
   es: {
@@ -222,6 +225,9 @@ export const translations: Record<LanguageCode, Record<string, string>> = {
     setNewPassword: "Establecer nueva contraseña",
     resetPasswordAndLogin: "Restablecer contraseña e iniciar sesión",
     backToSignIn: "Volver a Iniciar sesión",
+    sendResetCode: "Enviar código de restablecimiento",
+    saving: "Guardando...",
+    generateLettersOnlyPassword: "Generar contraseña solo letras",
   },
 
   hi: {
@@ -307,6 +313,9 @@ export const translations: Record<LanguageCode, Record<string, string>> = {
     setNewPassword: "नया पासवर्ड सेट करें",
     resetPasswordAndLogin: "पासवर्ड रीसेट करें और लॉगिन करें",
     backToSignIn: "साइन इन पर वापस जाएं",
+    sendResetCode: "रीसेट कोड भेजें",
+    saving: "सहेज रहा है...",
+    generateLettersOnlyPassword: "केवल अक्षरों वाला पासवर्ड बनाएं",
   },
 
   pt: {
@@ -392,6 +401,9 @@ export const translations: Record<LanguageCode, Record<string, string>> = {
     setNewPassword: "Definir nova senha",
     resetPasswordAndLogin: "Redefinir senha e entrar",
     backToSignIn: "Voltar para Entrar",
+    sendResetCode: "Enviar código de redefinição",
+    saving: "Salvando...",
+    generateLettersOnlyPassword: "Gerar senha apenas com letras",
   },
 
   zh: {
@@ -477,6 +489,9 @@ export const translations: Record<LanguageCode, Record<string, string>> = {
     setNewPassword: "设置新密码",
     resetPasswordAndLogin: "重置密码并登录",
     backToSignIn: "返回登录",
+    sendResetCode: "发送重置验证码",
+    saving: "保存中...",
+    generateLettersOnlyPassword: "生成纯字母密码",
   },
 
   fr: {
@@ -562,5 +577,8 @@ export const translations: Record<LanguageCode, Record<string, string>> = {
     setNewPassword: "Définir un nouveau mot de passe",
     resetPasswordAndLogin: "Réinitialiser le mot de passe et se connecter",
     backToSignIn: "Retour à la connexion",
+    sendResetCode: "Envoyer le code de réinitialisation",
+    saving: "Enregistrement...",
+    generateLettersOnlyPassword: "Générer un mot de passe avec lettres uniquement",
   },
 };

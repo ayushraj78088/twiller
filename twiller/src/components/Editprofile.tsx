@@ -160,7 +160,7 @@ const Editprofile = ({ isopen, onclose }: any) => {
               {isLoading ? (
                 <div className="flex items-center space-x-2">
                   <LoadingSpinner size="sm" />
-                  <span>{t("posting")}</span>
+                  <span>{t("saving")}</span>
                 </div>
               ) : (
                 t("save")

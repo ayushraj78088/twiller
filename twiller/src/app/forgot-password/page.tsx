@@ -224,7 +224,7 @@ export default function ForgotPasswordPage() {
                   disabled={isLoading || !identifier.trim()}
                   className="w-full bg-blue-500 hover:bg-blue-600 disabled:bg-gray-800 text-white font-semibold py-2.5 rounded-full transition-all"
                 >
-                  {isLoading ? "..." : t("resendOtp")}
+                  {isLoading ? "..." : t("sendResetCode")}
                 </Button>
               </form>
             ) : (
@@ -256,7 +256,7 @@ export default function ForgotPasswordPage() {
                       className="text-xs text-blue-400 hover:text-blue-300 flex items-center space-x-1 font-semibold"
                     >
                       <Sparkles className="h-3.5 w-3.5" />
-                      <span>Generate Letters-Only Password</span>
+                      <span>{t("generateLettersOnlyPassword")}</span>
                     </button>
                   </div>
 
