@@ -13,10 +13,12 @@ import {
   Volume2,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 import axiosInstance from "@/lib/axiosInstance";
 
 export default function TweetCard({ tweet }: any) {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [tweetstate, settweetstate] = useState(tweet);
   const likeTweet = async (tweetId: string) => {
     try {
@@ -109,7 +111,7 @@ export default function TweetCard({ tweet }: any) {
               <div className="mb-3 bg-gradient-to-r from-blue-950/40 via-purple-950/30 to-gray-900 border border-blue-900/40 p-3 rounded-2xl">
                 <div className="flex items-center space-x-2 text-xs font-semibold text-blue-400 mb-2">
                   <Volume2 className="h-4 w-4" />
-                  <span>Voice Tweet</span>
+                  <span>{t("voiceTweet")}</span>
                 </div>
                 <audio
                   controls

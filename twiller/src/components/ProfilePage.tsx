@@ -264,37 +264,37 @@ export default function ProfilePage() {
             value="posts"
             className="data-[state=active]:bg-transparent data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-blue-500 data-[state=active]:rounded-none text-gray-400 hover:bg-gray-900/50 py-3 px-3 shrink-0 font-semibold text-xs sm:text-sm"
           >
-            Posts
+            {t("posts")}
           </TabsTrigger>
           <TabsTrigger
             value="replies"
             className="data-[state=active]:bg-transparent data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-blue-500 data-[state=active]:rounded-none text-gray-400 hover:bg-gray-900/50 py-3 px-3 shrink-0 font-semibold text-xs sm:text-sm"
           >
-            Replies
+            {t("replies")}
           </TabsTrigger>
           <TabsTrigger
             value="highlights"
             className="data-[state=active]:bg-transparent data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-blue-500 data-[state=active]:rounded-none text-gray-400 hover:bg-gray-900/50 py-3 px-3 shrink-0 font-semibold text-xs sm:text-sm"
           >
-            Highlights
+            {t("highlights")}
           </TabsTrigger>
           <TabsTrigger
             value="articles"
             className="data-[state=active]:bg-transparent data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-blue-500 data-[state=active]:rounded-none text-gray-400 hover:bg-gray-900/50 py-3 px-3 shrink-0 font-semibold text-xs sm:text-sm"
           >
-            Articles
+            {t("articles")}
           </TabsTrigger>
           <TabsTrigger
             value="media"
             className="data-[state=active]:bg-transparent data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-blue-500 data-[state=active]:rounded-none text-gray-400 hover:bg-gray-900/50 py-3 px-3 shrink-0 font-semibold text-xs sm:text-sm"
           >
-            Media
+            {t("media")}
           </TabsTrigger>
           <TabsTrigger
             value="history"
             className="data-[state=active]:bg-transparent data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-blue-500 data-[state=active]:rounded-none text-gray-400 hover:bg-gray-900/50 py-3 px-3 shrink-0 font-semibold text-xs sm:text-sm"
           >
-            Login History
+            {t("loginHistory")}
           </TabsTrigger>
         </TabsList>
 

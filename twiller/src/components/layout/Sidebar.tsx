@@ -144,9 +144,7 @@ export default function Sidebar({
         </ul>
 
         <div className="mt-4 px-1 md:px-2 space-y-3">
-          <div className="hidden md:block">
-            <LanguageSelector />
-          </div>
+          <LanguageSelector />
 
           <Button className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 rounded-full text-base md:text-lg flex items-center justify-center">
             <Feather className="h-5 w-5 md:hidden" />

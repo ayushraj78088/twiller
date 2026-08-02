@@ -10,9 +10,11 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function ForgotPasswordPage() {
   const { setSessionUser } = useAuth();
+  const { t } = useLanguage();
   const [identifier, setIdentifier] = useState("");
   const [step, setStep] = useState<"request" | "verify">("request");
   const [otpCode, setOtpCode] = useState("");
@@ -124,22 +126,24 @@ export default function ForgotPasswordPage() {
       <div className="w-full max-w-md space-y-6">
         <div className="flex flex-col items-center justify-center text-center space-y-3">
           <TwitterLogo size="xl" className="text-white" />
-          <h1 className="text-3xl font-bold tracking-tight">Account Recovery</h1>
-          <p className="text-sm text-gray-400">
+          <h1 className="text-3xl font-extrabold text-white tracking-tight">
+            {t("accountRecovery")}
+          </h1>
+          <p className="text-xs text-gray-400 mt-1">
             Reset your password using your registered Email or Phone number
           </p>
         </div>
 
         <Card className="bg-gray-950 border-gray-800 text-white shadow-2xl rounded-2xl">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-xl font-bold flex items-center space-x-2">
+          <CardHeader className="space-y-1 pb-4">
+            <CardTitle className="text-xl font-bold flex items-center space-x-2 text-white">
               <KeyRound className="h-5 w-5 text-blue-400" />
               <span>
                 {isResetCompleted
-                  ? "Reset Complete"
+                  ? t("accountRecovery")
                   : step === "request"
-                  ? "Find your account"
-                  : "Set new password"}
+                  ? t("accountRecovery")
+                  : t("setNewPassword")}
               </span>
             </CardTitle>
             <CardDescription className="text-gray-400 text-xs">
@@ -195,7 +199,7 @@ export default function ForgotPasswordPage() {
               <form onSubmit={handleRequestReset} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="identifier" className="text-sm font-semibold text-gray-300">
-                    Email address or Phone number
+                    {t("email")} / {t("enterMobilePhone")}
                   </Label>
                   <div className="relative">
                     <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 flex items-center space-x-1">
@@ -220,14 +224,14 @@ export default function ForgotPasswordPage() {
                   disabled={isLoading || !identifier.trim()}
                   className="w-full bg-blue-500 hover:bg-blue-600 disabled:bg-gray-800 text-white font-semibold py-2.5 rounded-full transition-all"
                 >
-                  {isLoading ? "Checking request limit..." : "Send Reset Code"}
+                  {isLoading ? "..." : t("resendOtp")}
                 </Button>
               </form>
             ) : (
               <form onSubmit={handleVerifyAndReset} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="otpCode" className="text-xs font-semibold text-gray-400">
-                    6-Digit Verification Code
+                    {t("enterOtp")}
                   </Label>
                   <Input
                     id="otpCode"
@@ -244,7 +248,7 @@ export default function ForgotPasswordPage() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="newPassword" className="text-xs font-semibold text-gray-400">
-                      New Password
+                      {t("password")}
                     </Label>
                     <button
                       type="button"
@@ -297,7 +301,7 @@ export default function ForgotPasswordPage() {
                   disabled={isLoading || !otpCode || !newPassword}
                   className="w-full bg-blue-500 hover:bg-blue-600 disabled:bg-gray-800 text-white font-semibold py-2.5 rounded-full transition-all"
                 >
-                  {isLoading ? "Resetting Password..." : "Reset Password & Login"}
+                  {isLoading ? "..." : t("resetPasswordAndLogin")}
                 </Button>
               </form>
             )}
@@ -310,7 +314,7 @@ export default function ForgotPasswordPage() {
             className="inline-flex items-center space-x-2 text-sm text-gray-400 hover:text-white transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
-            <span>Back to Sign In</span>
+            <span>{t("backToSignIn")}</span>
           </Link>
         </div>
       </div>

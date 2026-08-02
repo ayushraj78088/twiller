@@ -295,6 +295,7 @@ app.post("/request-password-reset", async (req, res) => {
       subject: "Your Twiller Password Reset Verification Code",
       title: "Twiller Password Reset Verification",
       description: "Use the following 6-digit verification code to reset your account password:",
+      expiryMinutes: 15,
     });
 
     return res.status(200).send({
@@ -1157,7 +1158,7 @@ app.post("/post", async (req, res) => {
     }
 
     // 2. If posting an audio tweet, ensure server-side time restriction check
-    if (req.body.audio && !isWithinISTAudioWindow() && req.query.bypassTimeCheck !== "true") {
+    if (req.body.audio && !isWithinISTAudioWindow()) {
       return res.status(403).send({
         error: "Audio tweets can only be posted between 2:00 PM and 7:00 PM IST.",
       });

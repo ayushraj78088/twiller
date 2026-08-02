@@ -11,6 +11,7 @@ import { Label } from "./ui/label";
 import { Input } from "./ui/input";
 import { Separator } from "./ui/separator";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 import TwitterLogo from "./TwitterLogo";
 import LoginOtpModal from "./LoginOtpModal";
 
@@ -26,6 +27,7 @@ export default function AuthModal({
   initialMode = "login",
 }: AuthModalProps) {
   const { login, signup } = useAuth();
+  const { t } = useLanguage();
   const [mode, setMode] = useState<"login" | "signup">(initialMode);
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -148,7 +150,7 @@ export default function AuthModal({
               <TwitterLogo size="xl" className="text-white" />
             </div>
             <CardTitle className="text-2xl font-bold">
-              {mode === "login" ? "Sign in to X" : "Create your account"}
+              {mode === "login" ? t("signInToX") : t("createAccountTitle")}
             </CardTitle>
           </div>
         </CardHeader>
@@ -165,14 +167,14 @@ export default function AuthModal({
               <>
                 <div className="space-y-2">
                   <Label htmlFor="displayName" className="text-white">
-                    Display Name
+                    {t("displayName")}
                   </Label>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                     <Input
                       id="displayName"
                       type="text"
-                      placeholder="Your display name"
+                      placeholder={t("displayName")}
                       value={formData.displayName}
                       onChange={(e) =>
                         handleInputChange("displayName", e.target.value)
@@ -188,7 +190,7 @@ export default function AuthModal({
 
                 <div className="space-y-2">
                   <Label htmlFor="username" className="text-white">
-                    Username
+                    {t("username")}
                   </Label>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
@@ -197,7 +199,7 @@ export default function AuthModal({
                     <Input
                       id="username"
                       type="text"
-                      placeholder="username"
+                      placeholder={t("username")}
                       value={formData.username}
                       onChange={(e) =>
                         handleInputChange("username", e.target.value)
@@ -215,14 +217,14 @@ export default function AuthModal({
 
             <div className="space-y-2">
               <Label htmlFor="email" className="text-white">
-                Email
+                {t("email")}
               </Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                 <Input
                   id="email"
                   type="email"
-                  placeholder="Enter your email"
+                  placeholder={t("email")}
                   value={formData.email}
                   onChange={(e) => handleInputChange("email", e.target.value)}
                   className="pl-10 bg-transparent border-gray-600 text-white placeholder-gray-400 focus:border-blue-500"
@@ -236,14 +238,14 @@ export default function AuthModal({
 
             <div className="space-y-2">
               <Label htmlFor="password" className="text-white">
-                Password
+                {t("password")}
               </Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
-                  placeholder="Enter your password"
+                  placeholder={t("password")}
                   value={formData.password}
                   onChange={(e) =>
                     handleInputChange("password", e.target.value)
@@ -274,7 +276,7 @@ export default function AuthModal({
                     href="/forgot-password"
                     className="text-xs text-blue-400 hover:underline font-semibold"
                   >
-                    Forgot password?
+                    {t("forgotPassword")}
                   </a>
                 </div>
               )}
@@ -289,13 +291,13 @@ export default function AuthModal({
                 <div className="flex items-center space-x-2">
                   <LoadingSpinner size="sm" />
                   <span>
-                    {mode === "login" ? "Signing in..." : "Creating account..."}
+                    {mode === "login" ? "..." : "..."}
                   </span>
                 </div>
               ) : mode === "login" ? (
-                "Sign in"
+                t("signIn")
               ) : (
-                "Create account"
+                t("createAccount")
               )}
             </Button>
           </form>
@@ -310,15 +312,15 @@ export default function AuthModal({
           <div className="text-center">
             <p className="text-gray-400">
               {mode === "login"
-                ? "Don't have an account?"
-                : "Already have an account?"}
+                ? t("dontHaveAccount")
+                : t("alreadyHaveAccount")}
               <Button
                 variant="link"
                 className="text-blue-400 hover:text-blue-300 font-semibold pl-1"
                 onClick={switchMode}
                 disabled={isSubmitting}
               >
-                {mode === "login" ? "Sign up" : "Sign in"}
+                {mode === "login" ? t("signUp") : t("signIn")}
               </Button>
             </p>
           </div>
