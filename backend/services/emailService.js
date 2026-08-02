@@ -13,6 +13,8 @@ export async function sendOtpEmail(toEmail, otp, options = {}) {
   console.log(`[OTP GENERATED] Target Email: ${toEmail} | Code: ${otp} | Subject: ${subject}`);
   console.log(`========================================\n`);
 
+  const expiryText = options.expiryMinutes ? `${options.expiryMinutes} minutes` : "5 minutes";
+
   const htmlContent = `
     <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #e1e8ed; border-radius: 8px; background-color: #ffffff;">
       <h2 style="color: #1da1f2; margin-top: 0;">${title}</h2>
@@ -20,7 +22,7 @@ export async function sendOtpEmail(toEmail, otp, options = {}) {
       <div style="font-size: 32px; font-weight: bold; letter-spacing: 4px; color: #14171a; text-align: center; margin: 20px 0; padding: 15px; background-color: #f5f8fa; border-radius: 6px; border: 1px solid #e1e8ed;">
         ${otp}
       </div>
-      <p style="font-size: 12px; color: #657786;">This code is valid for 15 minutes. If you did not request this code, please ignore this email.</p>
+      <p style="font-size: 12px; color: #657786;">This code is valid for ${expiryText}. If you did not request this code, please ignore this email.</p>
     </div>
   `;
 

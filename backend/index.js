@@ -580,8 +580,7 @@ app.get("/audio-status", (req, res) => {
 app.post("/upload-audio", upload.single("audio"), async (req, res) => {
   try {
     // 1. Time Restriction Check (2:00 PM - 7:00 PM IST)
-    const bypassCheck = req.query.bypassTimeCheck === "true";
-    if (!isWithinISTAudioWindow() && !bypassCheck) {
+    if (!isWithinISTAudioWindow()) {
       // Remove uploaded temporary file if outside time window
       if (req.file) {
         fs.unlink(req.file.path, () => {});
@@ -627,7 +626,6 @@ app.post("/upload-audio", upload.single("audio"), async (req, res) => {
 // 1. Payment Status (Time Window Check: 10:00 AM - 11:00 AM IST)
 app.get("/payment-status", (req, res) => {
   const isAllowed = isWithinISTPaymentWindow();
-  const bypass = req.query.bypassPaymentCheck === "true";
   const options = {
     timeZone: "Asia/Kolkata",
     hour12: true,
@@ -638,10 +636,9 @@ app.get("/payment-status", (req, res) => {
   const currentIST = new Intl.DateTimeFormat("en-US", options).format(new Date());
 
   return res.status(200).send({
-    allowed: isAllowed || bypass,
+    allowed: isAllowed,
     currentIST,
     window: "10:00 AM - 11:00 AM IST",
-    bypassActive: bypass,
   });
 });
 
@@ -678,7 +675,7 @@ app.get("/user-subscription/:userId", async (req, res) => {
 // 3. Initiate Payment / Create Order Intent
 app.post("/create-payment-intent", async (req, res) => {
   try {
-    const { userId, email, planName, bypassPaymentCheck } = req.body;
+    const { userId, email, planName } = req.body;
 
     if (!userId || !planName) {
       return res.status(400).send({ error: "User ID and Plan Name are required." });
@@ -689,12 +686,7 @@ app.post("/create-payment-intent", async (req, res) => {
     }
 
     // Time window restriction check
-    const bypass =
-      bypassPaymentCheck === true ||
-      bypassPaymentCheck === "true" ||
-      req.query.bypassPaymentCheck === "true";
-
-    if (!isWithinISTPaymentWindow() && !bypass) {
+    if (!isWithinISTPaymentWindow()) {
       return res.status(403).send({
         error: "Payments and subscription plan upgrades are permitted only between 10:00 AM and 11:00 AM IST.",
       });
@@ -750,7 +742,7 @@ app.post("/create-payment-intent", async (req, res) => {
 // 4. Process Payment & Complete Subscription Upgrade
 app.post("/process-payment", async (req, res) => {
   try {
-    const { userId, email, planName, transactionId, paymentStatus, bypassPaymentCheck } = req.body;
+    const { userId, email, planName, transactionId, paymentStatus } = req.body;
 
     if (!userId || !planName || !transactionId) {
       return res.status(400).send({ error: "User ID, Plan Name, and Transaction ID are required." });
@@ -761,12 +753,7 @@ app.post("/process-payment", async (req, res) => {
     }
 
     // Time Window Restriction Check
-    const bypass =
-      bypassPaymentCheck === true ||
-      bypassPaymentCheck === "true" ||
-      req.query.bypassPaymentCheck === "true";
-
-    if (!isWithinISTPaymentWindow() && !bypass) {
+    if (!isWithinISTPaymentWindow()) {
       return res.status(403).send({
         error: "Payments and subscription plan upgrades are permitted only between 10:00 AM and 11:00 AM IST.",
       });
@@ -1052,7 +1039,6 @@ app.post("/send-language-otp", async (req, res) => {
       emailSent,
       smsSent,
       smsNotice,
-      debugOtp: generatedOtp,
       cooldownSeconds: 60,
       expiresMinutes: 5,
     });

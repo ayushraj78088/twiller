@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axiosInstance from "@/lib/axiosInstance";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -25,6 +25,16 @@ export default function OtpModal({
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      setOtpSent(false);
+      setOtpCode("");
+      setError(null);
+      setSuccessMsg(null);
+      setPreviewUrl(null);
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 

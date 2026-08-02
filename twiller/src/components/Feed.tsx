@@ -49,9 +49,14 @@ const Feed = () => {
       setLoading(true);
 
       const res = await axiosInstance.get("/post");
-
       setTweets(res.data);
-      showNotifications(res.data);
+
+      // Populate seen tweet IDs so initial load doesn't trigger popups for historical tweets
+      if (Array.isArray(res.data)) {
+        res.data.forEach((tweet: Tweet) => {
+          if (tweet?._id) notifiedTweets.current.add(tweet._id);
+        });
+      }
     } catch (error) {
       console.error(error);
     } finally {

@@ -110,6 +110,12 @@ export const translations: Record<LanguageCode, Record<string, string>> = {
     website: "Website",
     save: "Save",
     cancel: "Cancel",
+    happeningNow: "Happening now",
+    joinToday: "Join today.",
+    signIn: "Sign in",
+    signUp: "Sign up",
+    createAccount: "Create account",
+    alreadyHaveAccount: "Already have an account?",
   },
 
   es: {
@@ -168,6 +174,12 @@ export const translations: Record<LanguageCode, Record<string, string>> = {
     website: "Sitio web",
     save: "Guardar",
     cancel: "Cancelar",
+    happeningNow: "Sucediendo ahora",
+    joinToday: "Únete hoy.",
+    signIn: "Iniciar sesión",
+    signUp: "Registrarse",
+    createAccount: "Crear cuenta",
+    alreadyHaveAccount: "¿Ya tienes una cuenta?",
   },
 
   hi: {
@@ -226,6 +238,12 @@ export const translations: Record<LanguageCode, Record<string, string>> = {
     website: "वेबसाइट",
     save: "सहेजें",
     cancel: "रद्द करें",
+    happeningNow: "अभी हो रहा है",
+    joinToday: "आज ही जुड़ें।",
+    signIn: "साइन इन करें",
+    signUp: "साइन अप करें",
+    createAccount: "खाता बनाएं",
+    alreadyHaveAccount: "क्या आपका पहले से खाता है?",
   },
 
   pt: {
@@ -284,6 +302,12 @@ export const translations: Record<LanguageCode, Record<string, string>> = {
     website: "Website",
     save: "Salvar",
     cancel: "Cancelar",
+    happeningNow: "Acontecendo agora",
+    joinToday: "Junte-se hoje.",
+    signIn: "Entrar",
+    signUp: "Inscrever-se",
+    createAccount: "Criar conta",
+    alreadyHaveAccount: "Já tem uma conta?",
   },
 
   zh: {
@@ -339,9 +363,15 @@ export const translations: Record<LanguageCode, Record<string, string>> = {
     editProfile: "编辑资料",
     bio: "个人简介",
     location: "位置",
-    website: "个人网站",
+    website: "网站",
     save: "保存",
     cancel: "取消",
+    happeningNow: "正在发生",
+    joinToday: "立即加入。",
+    signIn: "登录",
+    signUp: "注册",
+    createAccount: "创建账户",
+    alreadyHaveAccount: "已有账户？",
   },
 
   fr: {
@@ -400,5 +430,11 @@ export const translations: Record<LanguageCode, Record<string, string>> = {
     website: "Site web",
     save: "Enregistrer",
     cancel: "Annuler",
+    happeningNow: "En ce moment",
+    joinToday: "Rejoignez aujourd'hui.",
+    signIn: "Se connecter",
+    signUp: "S'inscrire",
+    createAccount: "Créer un compte",
+    alreadyHaveAccount: "Vous avez déjà un compte ?",
   },
 };

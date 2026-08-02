@@ -58,9 +58,14 @@ export const parseUserAgent = (req) => {
   if (source.isiPhone) os = "iOS";
   if (source.isiPad) os = "iPadOS";
 
-  // Device category: Mobile vs Desktop
+  // Device category: Mobile vs Desktop/Laptop
   const isMobile = source.isMobile || source.isTablet || /Android|iPhone|iPad|iPod|Mobile/i.test(uaString);
-  const device = isMobile ? "Mobile" : "Desktop";
+  let device = "Desktop";
+  if (isMobile) {
+    device = "Mobile";
+  } else if (/Macintosh|Mac OS X|Windows|Linux/i.test(uaString)) {
+    device = "Desktop/Laptop";
+  }
 
   return { browser, os, device };
 };

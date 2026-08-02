@@ -7,10 +7,13 @@ import { useAuth } from "@/context/AuthContext";
 import Feed from "./Feed";
 import TwitterLogo from "./TwitterLogo";
 
+import { useLanguage } from "@/context/LanguageContext";
+
 export default function LandingPage() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState<"login" | "signup">("signup");
   const { user, logout, googlesignin } = useAuth();
+  const { t } = useLanguage();
 
   const openAuthModal = (mode: "login" | "signup") => {
     setAuthMode(mode);
@@ -34,9 +37,9 @@ export default function LandingPage() {
         <div className="space-y-12">
           <div>
             <h1 className="text-5xl lg:text-6xl font-bold mb-8 leading-tight">
-              Happening now
+              {t("happeningNow")}
             </h1>
-            <h2 className="text-2xl lg:text-3xl font-bold mb-8">Join today.</h2>
+            <h2 className="text-2xl lg:text-3xl font-bold mb-8">{t("joinToday")}</h2>
           </div>
 
           <div className="space-y-4 max-w-xs">
@@ -93,7 +96,7 @@ export default function LandingPage() {
               className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 rounded-full text-base h-12"
               onClick={() => openAuthModal("signup")}
             >
-              Create account
+              {t("createAccount")}
             </Button>
             <p className="text-xs text-gray-400 leading-relaxed">
               By signing up, you agree to the{" "}
@@ -112,13 +115,13 @@ export default function LandingPage() {
             </p>
           </div>
           <div className="space-y-5">
-            <p className="text-lg font-bold">Already have an account?</p>
+            <p className="text-lg font-bold">{t("alreadyHaveAccount")}</p>
             <Button
               variant="outline"
               className="w-full max-w-xs py-3 rounded-full border-gray-600 hover:bg-gray-900 text-blue-400 font-semibold text-base h-12"
               onClick={() => openAuthModal("login")}
             >
-              Log in
+              {t("signIn")}
             </Button>
           </div>
         </div>
