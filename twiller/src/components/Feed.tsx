@@ -8,6 +8,7 @@ import TweetCard from "./TweetCard";
 import TweetComposer from "./TweetComposer";
 import axiosInstance from "@/lib/axiosInstance";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 import { io, Socket } from "socket.io-client";
 
 interface Tweet {
@@ -31,6 +32,7 @@ interface Tweet {
 
 const Feed = () => {
   const { user } = useAuth();
+  const { t } = useLanguage();
 
   const socketRef = useRef<Socket | null>(null);
 
@@ -156,15 +158,15 @@ const Feed = () => {
           <TabsList className="grid w-full grid-cols-2 bg-transparent border-b border-gray-800 rounded-none h-auto">
             <TabsTrigger
               value="foryou"
-              className="data-[state=active]:bg-transparent data-[state=active]:text-white data-[state=active]:border-b-1 data-[state=active]:border-blue-100 data-[state=active]:rounded-none text-gray-400 hover:bg-gray-900/50 py-4 font-semibold"
+              className="py-4 font-semibold text-gray-400 hover:text-white hover:bg-gray-900/50 border-b-2 border-transparent data-[state=active]:text-white data-[state=active]:border-blue-500 data-[state=active]:bg-transparent rounded-none"
             >
-              For you
+              {t("forYou")}
             </TabsTrigger>
             <TabsTrigger
               value="following"
-              className="data-[state=active]:bg-transparent data-[state=active]:text-white data-[state=active]:border-b-1 data-[state=active]:border-blue-100 data-[state=active]:rounded-none text-gray-400 hover:bg-gray-900/50 py-4 font-semibold"
+              className="py-4 font-semibold text-gray-400 hover:text-white hover:bg-gray-900/50 border-b-2 border-transparent data-[state=active]:text-white data-[state=active]:border-blue-500 data-[state=active]:bg-transparent rounded-none"
             >
-              Following
+              {t("following")}
             </TabsTrigger>
           </TabsList>
         </Tabs>

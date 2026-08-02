@@ -21,9 +21,9 @@ export default function LanguageSelector() {
     <DropdownMenu>
       <DropdownMenuTrigger
         render={
-          <Button
-            variant="ghost"
-            className="w-full justify-center md:justify-between text-base py-3 px-2 md:px-4 rounded-full hover:bg-gray-900 text-gray-300 hover:text-white transition-colors flex items-center"
+          <button
+            type="button"
+            className="w-full justify-center md:justify-between text-base py-2.5 px-2 md:px-4 rounded-full bg-black hover:bg-gray-900 border border-gray-800 text-white transition-colors flex items-center focus:outline-none data-[state=open]:bg-gray-900"
           />
         }
       >
@@ -33,7 +33,7 @@ export default function LanguageSelector() {
             {currentLang.flag} {currentLang.name}
           </span>
         </div>
-        <ChevronDown className="hidden md:block h-4 w-4 text-gray-400 ml-2" />
+        <ChevronDown className="hidden md:block h-4 w-4 text-gray-400 ml-2 shrink-0" />
       </DropdownMenuTrigger>
 
       <DropdownMenuContent className="w-56 bg-black border border-gray-800 text-white p-1 rounded-xl shadow-2xl">
