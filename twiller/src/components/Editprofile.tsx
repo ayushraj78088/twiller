@@ -153,7 +153,7 @@ const Editprofile = ({ isopen, onclose }: any) => {
 
             <Button
               type="submit"
-              form="editProfileForm"
+              form="edit-profile-form"
               className="bg-white hover:bg-gray-200 text-black font-bold rounded-full px-4"
               disabled={isLoading}
             >
