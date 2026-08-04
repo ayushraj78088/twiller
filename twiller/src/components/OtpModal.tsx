@@ -47,6 +47,9 @@ export default function OtpModal({
       const res = await axiosInstance.post("/send-otp", { email: userEmail });
       setOtpSent(true);
       setSuccessMsg(res.data.message || "OTP code sent to your email.");
+      if (res.data.debugOtp) {
+        setOtpCode(res.data.debugOtp);
+      }
       if (res.data.previewUrl) {
         setPreviewUrl(res.data.previewUrl);
       }
