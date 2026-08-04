@@ -143,9 +143,19 @@ export default function ProfilePage() {
     fetchTweets();
     fetchLoginHistory();
   }, [user?._id]);
-  // Filter tweets by current user
-  const userTweets = tweets.filter(
-    (tweet: any) => tweet && tweet.author && tweet.author._id === user?._id,
+  // Filter and deduplicate tweets by current user
+  const userTweets = Array.from(
+    new Map(
+      tweets
+        .filter(
+          (tweet: any) =>
+            tweet &&
+            tweet._id &&
+            tweet.author &&
+            (tweet.author._id === user?._id || tweet.author._id === user?._id?.toString())
+        )
+        .map((t: any) => [t._id, t])
+    ).values()
   );
 
   return (

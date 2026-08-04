@@ -143,9 +143,23 @@ const Feed = () => {
   }, []);
 
   const handleTweetPosted = (newTweet: Tweet) => {
-    setTweets((prev: Tweet[]) => [newTweet, ...prev]);
+    setTweets((prev: Tweet[]) => {
+      if (prev.some((t: Tweet) => t._id === newTweet._id)) {
+        return prev;
+      }
+      return [newTweet, ...prev];
+    });
     showNotifications([newTweet]);
   };
+
+  // Deduplicate tweets by _id to prevent double rendering from socket/HTTP race conditions
+  const uniqueTweets = Array.from(
+    new Map(
+      tweets
+        .filter((t: Tweet) => t && t._id)
+        .map((t: Tweet) => [t._id, t])
+    ).values()
+  );
 
   return (
     <div className="min-h-screen">
@@ -183,7 +197,7 @@ const Feed = () => {
             </CardContent>
           </Card>
         ) : (
-          tweets.map((tweet: Tweet) => (
+          uniqueTweets.map((tweet: Tweet) => (
             <TweetCard key={tweet._id} tweet={tweet} />
           ))
         )}
