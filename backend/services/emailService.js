@@ -1,8 +1,28 @@
 import { Resend } from "resend";
 import nodemailer from "nodemailer";
+import dns from "dns";
 
 let resendInstance = null;
 let nodemailerTransporter = null;
+
+function createSmtpTransporter() {
+  return nodemailer.createTransport({
+    host: process.env.EMAIL_HOST || "smtp.gmail.com",
+    port: process.env.EMAIL_PORT ? parseInt(process.env.EMAIL_PORT, 10) : 465,
+    secure: process.env.EMAIL_SECURE !== "false",
+    family: 4,
+    lookup: (hostname, options, callback) => {
+      dns.lookup(hostname, { family: 4 }, callback);
+    },
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 10000,
+    auth: {
+      user: process.env.EMAIL_USER.trim(),
+      pass: process.env.EMAIL_PASS.replace(/\s+/g, ""),
+    },
+  });
+}
 
 export async function sendOtpEmail(toEmail, otp, options = {}) {
   const subject = options.subject || "Your Twiller Verification Code";
@@ -32,19 +52,7 @@ export async function sendOtpEmail(toEmail, otp, options = {}) {
   if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
     try {
       if (!nodemailerTransporter) {
-        nodemailerTransporter = nodemailer.createTransport({
-          host: process.env.EMAIL_HOST || "smtp.gmail.com",
-          port: process.env.EMAIL_PORT ? parseInt(process.env.EMAIL_PORT, 10) : 465,
-          secure: process.env.EMAIL_SECURE !== "false",
-          family: 4,
-          connectionTimeout: 10000,
-          greetingTimeout: 10000,
-          socketTimeout: 10000,
-          auth: {
-            user: process.env.EMAIL_USER.trim(),
-            pass: process.env.EMAIL_PASS.replace(/\s+/g, ""),
-          },
-        });
+        nodemailerTransporter = createSmtpTransporter();
       }
 
       const sendPromise = nodemailerTransporter.sendMail({
@@ -63,6 +71,7 @@ export async function sendOtpEmail(toEmail, otp, options = {}) {
       return { success: true };
     } catch (err) {
       console.error("❌ Nodemailer SMTP error:", err.message);
+      nodemailerTransporter = null;
     }
   }
 
