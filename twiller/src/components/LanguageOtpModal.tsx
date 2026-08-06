@@ -277,23 +277,6 @@ export default function LanguageOtpModal() {
           </div>
         ) : (
           <form onSubmit={handleVerifyOtp} className="space-y-4">
-            {debugOtp && (
-              <div className="bg-emerald-950/80 border border-emerald-700/80 p-3 rounded-xl text-emerald-300 text-xs flex items-center justify-between shadow-lg animate-in fade-in">
-                <div>
-                  <span className="font-bold text-emerald-400 uppercase tracking-wider block text-[10px]">Evaluator OTP Helper</span>
-                  <span>Verification Code: <strong className="text-white text-sm font-mono tracking-widest">{debugOtp}</strong></span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setOtp(debugOtp)}
-                  className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3 py-1.5 rounded-lg text-xs transition-colors shadow-md flex items-center space-x-1"
-                >
-                  <span>Fill OTP</span>
-                  <span>⚡</span>
-                </button>
-              </div>
-            )}
-
             <div className="space-y-1">
               <div className="flex justify-between items-center">
                 <label className="text-xs font-semibold text-gray-300">

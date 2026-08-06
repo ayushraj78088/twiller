@@ -26,7 +26,35 @@ export async function sendOtpEmail(toEmail, otp, options = {}) {
     </div>
   `;
 
-  // 1. Resend API Integration
+  // 1. Nodemailer with real SMTP (Gmail App Password, Brevo, or custom SMTP) - Sends to ANY email address worldwide!
+  if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+    try {
+      if (!nodemailerTransporter) {
+        nodemailerTransporter = nodemailer.createTransport({
+          host: process.env.EMAIL_HOST || undefined,
+          port: process.env.EMAIL_PORT ? parseInt(process.env.EMAIL_PORT, 10) : undefined,
+          secure: process.env.EMAIL_SECURE === "true",
+          service: !process.env.EMAIL_HOST ? (process.env.EMAIL_SERVICE || "gmail") : undefined,
+          auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS,
+          },
+        });
+      }
+      await nodemailerTransporter.sendMail({
+        from: `"${process.env.EMAIL_FROM_NAME || 'Twiller Security'}" <${process.env.EMAIL_USER}>`,
+        to: toEmail,
+        subject: subject,
+        html: htmlContent,
+      });
+      console.log(`✅ Real OTP email delivered to ${toEmail} via Nodemailer SMTP.`);
+      return { success: true };
+    } catch (err) {
+      console.error("❌ Nodemailer SMTP error:", err.message);
+    }
+  }
+
+  // 2. Resend API Integration
   if (process.env.RESEND_API_KEY) {
     try {
       if (!resendInstance) {
@@ -47,31 +75,6 @@ export async function sendOtpEmail(toEmail, otp, options = {}) {
       }
     } catch (err) {
       console.error("❌ Resend dispatch error:", err.message);
-    }
-  }
-
-  // 2. Nodemailer with custom SMTP
-  if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-    try {
-      if (!nodemailerTransporter) {
-        nodemailerTransporter = nodemailer.createTransport({
-          service: process.env.EMAIL_SERVICE || "gmail",
-          auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASS,
-          },
-        });
-      }
-      await nodemailerTransporter.sendMail({
-        from: `"${process.env.EMAIL_FROM_NAME || 'Twiller Security'}" <${process.env.EMAIL_USER}>`,
-        to: toEmail,
-        subject: subject,
-        html: htmlContent,
-      });
-      console.log(`✅ Email sent to ${toEmail} via Nodemailer SMTP.`);
-      return { success: true };
-    } catch (err) {
-      console.error("❌ Nodemailer error:", err.message);
     }
   }
 
@@ -183,7 +186,32 @@ export async function sendInvoiceEmail(toEmail, invoiceData) {
     </div>
   `;
 
-  // 1. Resend API Delivery
+  // 1. Nodemailer with real SMTP (Gmail App Password, Brevo, etc.)
+  if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+    try {
+      if (!nodemailerTransporter) {
+        nodemailerTransporter = nodemailer.createTransport({
+          host: process.env.EMAIL_HOST || undefined,
+          port: process.env.EMAIL_PORT ? parseInt(process.env.EMAIL_PORT, 10) : undefined,
+          secure: process.env.EMAIL_SECURE === "true",
+          service: !process.env.EMAIL_HOST ? (process.env.EMAIL_SERVICE || "gmail") : undefined,
+          auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
+        });
+      }
+      await nodemailerTransporter.sendMail({
+        from: `"${process.env.EMAIL_FROM_NAME || 'Twiller Invoicing'}" <${process.env.EMAIL_USER}>`,
+        to: toEmail,
+        subject: subject,
+        html: htmlContent,
+      });
+      console.log(`✅ Invoice sent to ${toEmail} via Nodemailer SMTP.`);
+      return { success: true };
+    } catch (err) {
+      console.error("❌ Nodemailer invoice error:", err.message);
+    }
+  }
+
+  // 2. Resend API Delivery
   if (process.env.RESEND_API_KEY) {
     try {
       if (!resendInstance) {
@@ -202,28 +230,6 @@ export async function sendInvoiceEmail(toEmail, invoiceData) {
       }
     } catch (err) {
       console.error("❌ Resend invoice error:", err.message);
-    }
-  }
-
-  // 2. Nodemailer fallback
-  if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-    try {
-      if (!nodemailerTransporter) {
-        nodemailerTransporter = nodemailer.createTransport({
-          service: process.env.EMAIL_SERVICE || "gmail",
-          auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
-        });
-      }
-      await nodemailerTransporter.sendMail({
-        from: `"${process.env.EMAIL_FROM_NAME || 'Twiller Invoicing'}" <${process.env.EMAIL_USER}>`,
-        to: toEmail,
-        subject: subject,
-        html: htmlContent,
-      });
-      console.log(`✅ Invoice sent to ${toEmail} via SMTP.`);
-      return { success: true };
-    } catch (err) {
-      console.error("❌ Nodemailer invoice error:", err.message);
     }
   }
 

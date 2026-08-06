@@ -69,10 +69,6 @@ export default function ForgotPasswordPage() {
 
       setSuccessMsg(res.data.message || "Reset code sent successfully.");
       setUserEmail(res.data.email || identifier.trim());
-      if (res.data.debugOtp) {
-        setDebugOtp(res.data.debugOtp);
-        setOtpCode(res.data.debugOtp);
-      }
       if (res.data.previewUrl) {
         setPreviewUrl(res.data.previewUrl);
       }
