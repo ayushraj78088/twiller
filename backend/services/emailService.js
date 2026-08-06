@@ -26,6 +26,8 @@ export async function sendOtpEmail(toEmail, otp, options = {}) {
     </div>
   `;
 
+  console.log(`[EMAIL DISPATCH START] Target: ${toEmail} | EMAIL_USER: ${process.env.EMAIL_USER ? process.env.EMAIL_USER : "NOT SET ON RENDER"} | EMAIL_PASS: ${process.env.EMAIL_PASS ? "SET" : "NOT SET ON RENDER"}`);
+
   // 1. Nodemailer with real SSL SMTP (Gmail App Password, Brevo, or custom SMTP) - Sends to ANY email address worldwide!
   if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
     try {
