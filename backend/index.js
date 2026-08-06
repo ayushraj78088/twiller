@@ -211,7 +211,6 @@ app.post("/send-otp", async (req, res) => {
 
     return res.status(200).send({
       message: "OTP sent successfully to " + cleanEmail,
-      debugOtp: otpCode,
       previewUrl: emailResult?.previewUrl || null,
     });
   } catch (error) {
@@ -320,7 +319,6 @@ app.post("/request-password-reset", async (req, res) => {
     return res.status(200).send({
       message: `Password reset verification code sent to ${user.email}`,
       email: user.email,
-      debugOtp: otpCode,
       previewUrl: emailResult?.previewUrl || null,
     });
   } catch (error) {
@@ -1082,7 +1080,6 @@ app.post("/send-language-otp", async (req, res) => {
       emailSent,
       smsSent,
       smsNotice,
-      debugOtp: generatedOtp,
       cooldownSeconds: 60,
       expiresMinutes: 5,
     });
