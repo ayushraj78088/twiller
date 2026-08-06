@@ -52,7 +52,7 @@ export async function sendOtpEmail(toEmail, otp, options = {}) {
       });
 
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("Nodemailer SMTP timeout (4s)")), 4000)
+        setTimeout(() => reject(new Error("Nodemailer SMTP timeout (12s)")), 12000)
       );
 
       await Promise.race([sendPromise, timeoutPromise]);
@@ -78,7 +78,7 @@ export async function sendOtpEmail(toEmail, otp, options = {}) {
       });
 
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("Resend API timeout (4s)")), 4000)
+        setTimeout(() => reject(new Error("Resend API timeout (12s)")), 12000)
       );
 
       const response = await Promise.race([resendPromise, timeoutPromise]);
