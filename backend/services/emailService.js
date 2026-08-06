@@ -35,18 +35,28 @@ export async function sendOtpEmail(toEmail, otp, options = {}) {
           port: process.env.EMAIL_PORT ? parseInt(process.env.EMAIL_PORT, 10) : undefined,
           secure: process.env.EMAIL_SECURE === "true",
           service: !process.env.EMAIL_HOST ? (process.env.EMAIL_SERVICE || "gmail") : undefined,
+          connectionTimeout: 4000,
+          greetingTimeout: 4000,
+          socketTimeout: 4000,
           auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASS,
+            user: process.env.EMAIL_USER.trim(),
+            pass: process.env.EMAIL_PASS.trim(),
           },
         });
       }
-      await nodemailerTransporter.sendMail({
-        from: `"${process.env.EMAIL_FROM_NAME || 'Twiller Security'}" <${process.env.EMAIL_USER}>`,
+
+      const sendPromise = nodemailerTransporter.sendMail({
+        from: `"${process.env.EMAIL_FROM_NAME || 'Twiller Security'}" <${process.env.EMAIL_USER.trim()}>`,
         to: toEmail,
         subject: subject,
         html: htmlContent,
       });
+
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Nodemailer SMTP timeout (4s)")), 4000)
+      );
+
+      await Promise.race([sendPromise, timeoutPromise]);
       console.log(`✅ Real OTP email delivered to ${toEmail} via Nodemailer SMTP.`);
       return { success: true };
     } catch (err) {
@@ -54,23 +64,30 @@ export async function sendOtpEmail(toEmail, otp, options = {}) {
     }
   }
 
-  // 2. Resend API Integration
+  // 2. Resend API Integration (wrapped in 4s timeout)
   if (process.env.RESEND_API_KEY) {
     try {
       if (!resendInstance) {
-        resendInstance = new Resend(process.env.RESEND_API_KEY);
+        resendInstance = new Resend(process.env.RESEND_API_KEY.trim());
       }
-      const response = await resendInstance.emails.send({
+
+      const resendPromise = resendInstance.emails.send({
         from: process.env.RESEND_FROM_EMAIL || "Twiller Security <onboarding@resend.dev>",
         to: [toEmail],
         subject: subject,
         html: htmlContent,
       });
 
-      if (response.error) {
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Resend API timeout (4s)")), 4000)
+      );
+
+      const response = await Promise.race([resendPromise, timeoutPromise]);
+
+      if (response && response.error) {
         console.error("❌ Resend API Error:", response.error);
-      } else {
-        console.log(`🚀 Real email delivered to ${toEmail} via Resend! Message ID: ${response.data?.id}`);
+      } else if (response && response.data) {
+        console.log(`🚀 Real email delivered to ${toEmail} via Resend! Message ID: ${response.data.id}`);
         return { success: true };
       }
     } catch (err) {
@@ -86,6 +103,8 @@ export async function sendOtpEmail(toEmail, otp, options = {}) {
         host: "smtp.ethereal.email",
         port: 587,
         secure: false,
+        connectionTimeout: 3000,
+        socketTimeout: 3000,
         auth: { user: testAccount.user, pass: testAccount.pass },
       });
 
