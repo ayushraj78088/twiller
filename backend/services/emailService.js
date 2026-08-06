@@ -7,12 +7,11 @@ let nodemailerTransporter = null;
 
 function createSmtpTransporter() {
   return nodemailer.createTransport({
-    host: process.env.EMAIL_HOST || "smtp.gmail.com",
+    host: process.env.EMAIL_HOST || "74.125.130.108",
     port: process.env.EMAIL_PORT ? parseInt(process.env.EMAIL_PORT, 10) : 465,
     secure: process.env.EMAIL_SECURE !== "false",
-    family: 4,
-    lookup: (hostname, options, callback) => {
-      dns.lookup(hostname, { family: 4 }, callback);
+    tls: {
+      servername: "smtp.gmail.com",
     },
     connectionTimeout: 10000,
     greetingTimeout: 10000,
