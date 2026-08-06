@@ -26,21 +26,20 @@ export async function sendOtpEmail(toEmail, otp, options = {}) {
     </div>
   `;
 
-  // 1. Nodemailer with real SMTP (Gmail App Password, Brevo, or custom SMTP) - Sends to ANY email address worldwide!
+  // 1. Nodemailer with real SSL SMTP (Gmail App Password, Brevo, or custom SMTP) - Sends to ANY email address worldwide!
   if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
     try {
       if (!nodemailerTransporter) {
         nodemailerTransporter = nodemailer.createTransport({
-          host: process.env.EMAIL_HOST || undefined,
-          port: process.env.EMAIL_PORT ? parseInt(process.env.EMAIL_PORT, 10) : undefined,
-          secure: process.env.EMAIL_SECURE === "true",
-          service: !process.env.EMAIL_HOST ? (process.env.EMAIL_SERVICE || "gmail") : undefined,
-          connectionTimeout: 4000,
-          greetingTimeout: 4000,
-          socketTimeout: 4000,
+          host: process.env.EMAIL_HOST || "smtp.gmail.com",
+          port: process.env.EMAIL_PORT ? parseInt(process.env.EMAIL_PORT, 10) : 465,
+          secure: process.env.EMAIL_SECURE !== "false",
+          connectionTimeout: 10000,
+          greetingTimeout: 10000,
+          socketTimeout: 10000,
           auth: {
             user: process.env.EMAIL_USER.trim(),
-            pass: process.env.EMAIL_PASS.trim(),
+            pass: process.env.EMAIL_PASS.replace(/\s+/g, ""),
           },
         });
       }
@@ -210,11 +209,13 @@ export async function sendInvoiceEmail(toEmail, invoiceData) {
     try {
       if (!nodemailerTransporter) {
         nodemailerTransporter = nodemailer.createTransport({
-          host: process.env.EMAIL_HOST || undefined,
-          port: process.env.EMAIL_PORT ? parseInt(process.env.EMAIL_PORT, 10) : undefined,
-          secure: process.env.EMAIL_SECURE === "true",
-          service: !process.env.EMAIL_HOST ? (process.env.EMAIL_SERVICE || "gmail") : undefined,
-          auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
+          host: process.env.EMAIL_HOST || "smtp.gmail.com",
+          port: process.env.EMAIL_PORT ? parseInt(process.env.EMAIL_PORT, 10) : 465,
+          secure: process.env.EMAIL_SECURE !== "false",
+          connectionTimeout: 10000,
+          greetingTimeout: 10000,
+          socketTimeout: 10000,
+          auth: { user: process.env.EMAIL_USER.trim(), pass: process.env.EMAIL_PASS.replace(/\s+/g, "") },
         });
       }
       await nodemailerTransporter.sendMail({

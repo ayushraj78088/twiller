@@ -97,10 +97,6 @@ export default function LanguageOtpModal() {
       setOtpSent(true);
       setCooldown(60); // 60 seconds resend cooldown
       setRemainingAttempts(3);
-      if (res.data.debugOtp) {
-        setDebugOtp(res.data.debugOtp);
-        setOtp(res.data.debugOtp);
-      }
       setSuccessMsg(res.data.message || `OTP sent to your registered ${deliveryMethod}!`);
     } catch (err: any) {
       const msg = err.response?.data?.error || "Failed to send OTP. Please try again.";
