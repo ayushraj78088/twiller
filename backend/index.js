@@ -1004,15 +1004,20 @@ app.post("/send-language-otp", async (req, res) => {
       });
     }
 
-    // Enforce 60-second resend cooldown timer
+    // Handle active OTP 60-second cooldown gracefully
     const existingOtp = await Otp.findOne({ target });
     if (existingOtp) {
       const timeSinceLastSent = (Date.now() - new Date(existingOtp.lastSentAt).getTime()) / 1000;
       if (timeSinceLastSent < 60) {
         const remainingSeconds = Math.ceil(60 - timeSinceLastSent);
-        return res.status(429).send({
-          error: `Please wait ${remainingSeconds} seconds before requesting a new OTP.`,
-          cooldownRemaining: remainingSeconds,
+        return res.status(200).send({
+          success: true,
+          message: `Verification code was sent to ${target}. Please check your inbox or wait ${remainingSeconds}s to request a new code.`,
+          deliveryMethod,
+          target,
+          cooldownSeconds: remainingSeconds,
+          expiresMinutes: 5,
+          existingActive: true,
         });
       }
     }

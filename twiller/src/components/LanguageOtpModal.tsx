@@ -105,8 +105,9 @@ export default function LanguageOtpModal() {
     } catch (err: any) {
       const msg = err.response?.data?.error || "Failed to send OTP. Please try again.";
       setErrorMsg(msg);
-      if (err.response?.data?.cooldownRemaining) {
-        setCooldown(err.response.data.cooldownRemaining);
+      if (err.response?.data?.cooldownRemaining || err.response?.status === 429) {
+        setCooldown(err.response?.data?.cooldownRemaining || 60);
+        setOtpSent(true);
       }
     } finally {
       setIsSendingOtp(false);
